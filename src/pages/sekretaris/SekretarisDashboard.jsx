@@ -85,7 +85,15 @@ const SekretarisDashboard = () => {
       setLoading(true);
       setError(null);
       const response = await atasanDisposisiService.getAtasanDisposisi();
-      const result = response.data;
+      
+      // --- PENGECEKAN KEAMANAN (BARU) ---
+      // Jika response undefined/null (karena backend error), lempar error manual
+      if (!response) {
+        throw new Error("Tidak ada respon dari server. Kemungkinan Backend Error.");
+      }
+      
+      const result = response.data; // Sekarang aman mengakses .data
+      
       let allData = [];
       if (result && Array.isArray(result.data)) {
         allData = result.data;
@@ -99,33 +107,25 @@ const SekretarisDashboard = () => {
       // Store semua data
       setAllDisposisi(allData);
 
-      // Hitung statistik dari data lengkap (tanpa filter)
+      // Hitung statistik (Safe navigation dengan ?.)
       const total = allData.length;
-      const belumDibaca = allData.filter(item => item.status_dari_sekretaris === 'belum dibaca').length;
+      const belumDibaca = allData.filter(item => item?.status_dari_sekretaris === 'belum dibaca').length;
       const diproses = allData.filter(item =>
-        item.status_dari_sekretaris === 'diproses' || item.status_dari_sekretaris === 'dalam proses'
+        item?.status_dari_sekretaris === 'diproses' || item?.status_dari_sekretaris === 'dalam proses'
       ).length;
-      const selesai = allData.filter(item => item.status_dari_sekretaris === 'selesai').length;
+      const selesai = allData.filter(item => item?.status_dari_sekretaris === 'selesai').length;
 
-      setStats({
-        total,
-        belumDibaca,
-        diproses,
-        selesai
-      });
+      setStats({ total, belumDibaca, diproses, selesai });
 
     } catch (err) {
       console.error('Error fetching disposisi:', err);
-      setError(err.message);
-
+      // Tampilkan pesan error yang lebih jelas
+      setError(err.message || "Gagal memuat data disposisi");
+      
       if (err.response) {
-        const status = err.response.status;
-        const message = err.response.data?.error || err.response.data?.message || 'Error tidak diketahui';
-        toast.error(`Gagal (${status}): ${message}`);
-      } else if (err.request) {
-        toast.error('Tidak dapat terhubung ke server. Periksa koneksi internet.');
+         toast.error(`Server Error: ${err.response.data?.error || err.message}`);
       } else {
-        toast.error('Terjadi kesalahan: ' + err.message);
+         toast.error(`Terjadi kesalahan: ${err.message}`);
       }
     } finally {
       setLoading(false);

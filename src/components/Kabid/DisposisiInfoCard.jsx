@@ -4,6 +4,31 @@ import { AlertCircle, Building, Calendar, Clock, FileText, MessageSquare, User }
 import StatusBadge from './StatusBadge'
 
 const DisposisiInfoCard = ({ disposisi }) => {
+
+  // === FUNGSI HELPER BARU ===
+  // Fungsi ini menangani dua kondisi:
+  // 1. Jika data dari database sudah "1 Januari 2025", tampilkan apa adanya.
+  // 2. Jika data dari database masih "2025-01-01", format dulu ke Indo.
+  const formatDisplayDate = (dateString) => {
+    if (!dateString) return '-'
+    
+    // Coba parse ke date object
+    const date = new Date(dateString)
+    
+    // Jika hasilnya "Invalid Date" (karena inputnya "1 Januari 2025"),
+    // maka kembalikan string aslinya saja.
+    if (isNaN(date.getTime())) {
+      return dateString
+    }
+
+    // Jika valid date (format ISO YYYY-MM-DD), format ke Indo
+    return date.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
       {/* Informasi Surat */}
@@ -29,20 +54,29 @@ const DisposisiInfoCard = ({ disposisi }) => {
             </div>
             <p className="font-semibold" >{disposisi.asal_instansi || '-'}</p>
           </div>
+
+          {/* === UPDATE: MENGGUNAKAN formatDisplayDate === */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center mb-2">
               <Calendar className="w-4 h-4 mr-2" />
               <p className="text-sm font-semibold" >Tanggal Surat</p>
             </div>
-            <p className="font-semibold" >{new Date(disposisi.tanggal_surat).toLocaleDateString('id-ID')}</p>
+            <p className="font-semibold" >
+              {formatDisplayDate(disposisi.tanggal_surat)}
+            </p>
           </div>
+
+          {/* === UPDATE: MENGGUNAKAN formatDisplayDate === */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center mb-2">
               <Calendar className="w-4 h-4 mr-2" />
               <p className="text-sm font-semibold" >Diterima Tanggal</p>
             </div>
-            <p className="font-semibold" >{new Date(disposisi.diterima_tanggal).toLocaleDateString('id-ID')}</p>
+            <p className="font-semibold" >
+              {formatDisplayDate(disposisi.diterima_tanggal)}
+            </p>
           </div>
+
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center mb-2">
               <FileText className="w-4 h-4 mr-2" />

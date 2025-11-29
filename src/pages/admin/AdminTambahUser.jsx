@@ -10,6 +10,8 @@ import {
   Loader2,
   CheckCircle,
   Loader,
+  Pencil, // Icon untuk mode edit/custom
+  ListFilter // Icon untuk kembali ke mode list
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -19,6 +21,11 @@ function AdminTambahUser() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
+  
+  // State untuk menangani mode input custom
+  const [isCustomBidang, setIsCustomBidang] = useState(false);
+  const [isCustomJabatan, setIsCustomJabatan] = useState(false);
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -36,6 +43,7 @@ function AdminTambahUser() {
 
   const openModal = (role) => {
     setSelectedRole(role);
+    // Reset form dan mode custom saat modal dibuka
     setForm({
       name: '',
       email: '',
@@ -44,6 +52,8 @@ function AdminTambahUser() {
       role: role,
       bidang: ''
     });
+    setIsCustomBidang(false);
+    setIsCustomJabatan(false);
     setShowModal(true);
     setSuccess(false);
   };
@@ -60,6 +70,20 @@ function AdminTambahUser() {
       bidang: ''
     });
     setSuccess(false);
+    setIsCustomBidang(false);
+    setIsCustomJabatan(false);
+  };
+
+  // Toggle untuk Bidang (Select <-> Input)
+  const toggleCustomBidang = () => {
+    setIsCustomBidang(!isCustomBidang);
+    setForm(prev => ({ ...prev, bidang: '' })); // Reset nilai saat ganti mode
+  };
+
+  // Toggle untuk Jabatan (Select <-> Input)
+  const toggleCustomJabatan = () => {
+    setIsCustomJabatan(!isCustomJabatan);
+    setForm(prev => ({ ...prev, jabatan: '' })); // Reset nilai saat ganti mode
   };
 
   const handleSubmit = async (e) => {
@@ -104,16 +128,12 @@ function AdminTambahUser() {
       case 'kepala':
         return {
           bidang: ['Pimpinan'],
-          jabatan: [
-            'Kepala Bepelitbangda',
-          ]
+          jabatan: ['Kepala Bepelitbangda']
         };
       case 'sekretaris':
         return {
           bidang: ['Sekretariat'],
-          jabatan: [
-            'Sekretaris',
-          ]
+          jabatan: ['Sekretaris']
         };
       case 'user':
         return {
@@ -166,31 +186,21 @@ function AdminTambahUser() {
 
   const getRoleLabel = (role) => {
     switch (role) {
-      case 'kepala':
-        return 'Kepala';
-      case 'sekretaris':
-        return 'Sekretaris';
-      case 'user':
-        return 'Kabid';
-      case 'staff':
-        return 'Staff';
-      default:
-        return 'User';
+      case 'kepala': return 'Kepala';
+      case 'sekretaris': return 'Sekretaris';
+      case 'user': return 'Kabid';
+      case 'staff': return 'Staff';
+      default: return 'User';
     }
   };
 
   const getRoleDescription = (role) => {
     switch (role) {
-      case 'kepala':
-        return 'Mengelola administrasi dan koordinasi';
-      case 'sekretaris':
-        return 'Mengelola administrasi dan koordinasi';
-      case 'user':
-        return 'Kepala bidang dengan akses penuh';
-      case 'staff':
-        return 'Staff operasional di berbagai bidang';
-      default:
-        return '';
+      case 'kepala': return 'Mengelola administrasi dan koordinasi';
+      case 'sekretaris': return 'Mengelola administrasi dan koordinasi';
+      case 'user': return 'Kepala bidang dengan akses penuh';
+      case 'staff': return 'Staff operasional di berbagai bidang';
+      default: return '';
     }
   };
 
@@ -230,7 +240,6 @@ function AdminTambahUser() {
           </div>
         </div>
 
-        {/* Modal Form — Disesuaikan dengan style AdminJadwalAcara */}
         {showModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
@@ -248,7 +257,6 @@ function AdminTambahUser() {
                 </div>
                 <button
                   onClick={closeModal}
-                  aria-label="Tutup modal"
                   disabled={loading}
                   className="p-2 hover:bg-gray-50 rounded-xl transition-colors duration-200 disabled:cursor-not-allowed border border-gray-200"
                 >
@@ -318,34 +326,92 @@ function AdminTambahUser() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* --- BAGIAN BIDANG --- */}
                     <div className="space-y-2">
-                      <label htmlFor="bidang" className="block text-sm font-semibold text-[#000000]">
-                        Bidang
-                      </label>
-                      <select
-                        id="bidang"
-                        name="bidang"
-                        value={form.bidang}
-                        onChange={handleChange}
-                        required
-                        disabled={loading || success}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed appearance-none"
-                      >
-                        <option value="" className="text-[#6b7280]">
-                          Pilih Bidang
-                        </option>
-                        {roleOptions.bidang.map((bidang) => (
-                          <option key={bidang} value={bidang}>
-                            {bidang}
+                      <div className="flex justify-between items-center">
+                        <label htmlFor="bidang" className="block text-sm font-semibold text-[#000000]">
+                          Bidang
+                        </label>
+                        {/* Tombol Toggle Custom Bidang */}
+                        <button
+                          type="button"
+                          onClick={toggleCustomBidang}
+                          className="text-xs flex items-center gap-1 text-teal-600 hover:text-teal-800 transition-colors"
+                        >
+                          {isCustomBidang ? (
+                            <>
+                              <ListFilter className="w-3 h-3" /> Pilih dari List
+                            </>
+                          ) : (
+                            <>
+                              <Pencil className="w-3 h-3" /> Input Manual
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {isCustomBidang ? (
+                         <input
+                         id="bidang-input"
+                         type="text"
+                         name="bidang"
+                         placeholder="Masukkan nama bidang kustom"
+                         value={form.bidang}
+                         onChange={handleChange}
+                         required
+                         disabled={loading || success}
+                         className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] placeholder-[#6b7280] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
+                       />
+                      ) : (
+                        <select
+                          id="bidang"
+                          name="bidang"
+                          value={form.bidang}
+                          onChange={handleChange}
+                          required
+                          disabled={loading || success}
+                          className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed appearance-none"
+                        >
+                          <option value="" className="text-[#6b7280]">
+                            Pilih Bidang
                           </option>
-                        ))}
-                      </select>
+                          {roleOptions.bidang.map((bidang) => (
+                            <option key={bidang} value={bidang}>
+                              {bidang}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
+
+                    {/* --- BAGIAN JABATAN --- */}
                     <div className="space-y-2">
-                      <label htmlFor="jabatan" className="block text-sm font-semibold text-[#000000]">
-                        Jabatan
-                      </label>
-                      {selectedRole === 'staff' ? (
+                       <div className="flex justify-between items-center">
+                        <label htmlFor="jabatan" className="block text-sm font-semibold text-[#000000]">
+                          Jabatan
+                        </label>
+                        {/* Tombol Toggle hanya muncul jika BUKAN staff (karena staff sudah default input) */}
+                        {selectedRole !== 'staff' && (
+                          <button
+                            type="button"
+                            onClick={toggleCustomJabatan}
+                            className="text-xs flex items-center gap-1 text-teal-600 hover:text-teal-800 transition-colors"
+                          >
+                             {isCustomJabatan ? (
+                              <>
+                                <ListFilter className="w-3 h-3" /> Pilih dari List
+                              </>
+                            ) : (
+                              <>
+                                <Pencil className="w-3 h-3" /> Input Manual
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+
+                      {selectedRole === 'staff' || isCustomJabatan ? (
                         <input
                           id="jabatan-input"
                           type="text"
@@ -392,11 +458,10 @@ function AdminTambahUser() {
                     <button
                       type="submit"
                       disabled={loading || success}
-                      className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center justify-center ${
-                        loading || success
+                      className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center justify-center ${loading || success
                           ? 'bg-black text-white cursor-not-allowed opacity-75'
                           : 'bg-black text-white hover:opacity-90 shadow-md hover:-translate-y-0.5'
-                      }`}
+                        }`}
                     >
                       {loading ? (
                         <>

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import {
   Send, Building2, FileText, Sparkles, Camera, X, Eye, Plus,
   Upload, Mail, Pencil, BookOpen, CheckCircle, ArrowRight, File,
-  FileIcon
+  FileIcon, Calendar // Tambahkan icon Calendar jika ingin variasi label
 } from 'lucide-react'
 import { api } from '../../utils/api'
 
@@ -29,44 +29,6 @@ const AdminBuatSuratMasuk = () => {
   const MAX_FILES = 10
   const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
-  const steps = [
-    {
-      icon: <FileText className="w-5 h-5" />,
-      title: "Lengkapi Data Surat Masuk",
-      description: "Isi kolom 'Asal Instansi', 'Nomor Surat', pilih 'Tujuan Jabatan', dan tambahkan 'Keterangan'.",
-      color: "from-blue-100 to-blue-100"
-    },
-    {
-      icon: <Upload className="w-5 h-5" />,
-      title: "Upload Foto Surat",
-      description: "Klik area upload atau tombol 'Tambah Foto' untuk memilih dan mengunggah gambar surat atau file PDF. Maksimal 10 file dengan ukuran masing-masing maksimal 5MB.",
-      color: "from-emerald-100 to-emerald-100"
-    },
-    {
-      icon: <BookOpen className="w-5 h-5" />,
-      title: "Isi Lembar Disposisi",
-      description: "Masukkan 'Perihal', pilih 'Disposisi Kepada', pilih satu atau lebih 'Tindakan', tentukan 'Sifat', dan tambahkan 'Catatan' jika diperlukan.",
-      color: "from-red-100 to-red-100"
-    },
-    {
-      icon: <Send className="w-5 h-5" />,
-      title: "Kirim Dokumen",
-      description: "Setelah semua data lengkap, klik tombol 'Kirim Surat & Disposisi' di bagian bawah halaman.",
-      color: "from-gray-100 to-gray-100"
-    }
-  ]
-
-  const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
-
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -148,8 +110,20 @@ const AdminBuatSuratMasuk = () => {
     setPreviewModal({ isOpen: false, imageUrl: '', index: null, isPdf: false })
   }
 
-  const handleSubmit = async (e) => {
+  const formatDateIndo = (dateString) => {
+    if (!dateString) return ''
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ]
+    // Split berdasarkan '-' agar tidak terkena masalah timezone
+    const [year, month, day] = dateString.split('-')
+    return `${parseInt(day)} ${months[parseInt(month) - 1]} ${year}`
+  }
+
+ const handleSubmit = async (e) => {
     e.preventDefault()
+    
     // Validation
     if (!formData.asal_instansi || !formData.nomor_surat || !formData.tanggal_surat || !formData.diterima_tanggal || !formData.nomor_agenda || !formData.keterangan) {
       toast.error("Lengkapi semua data surat!")
@@ -159,40 +133,41 @@ const AdminBuatSuratMasuk = () => {
       toast.error("Unggah minimal 1 file (foto atau PDF)!")
       return
     }
+
     setLoading(true)
     try {
       const submitData = new FormData()
-      Object.entries(formData).forEach(([k, v]) => submitData.append(k, v))
-      // Tambahkan tujuan_jabatan secara otomatis
+
+      // 1. Masukkan semua data KECUALI tanggal (karena akan diformat manual)
+      Object.entries(formData).forEach(([k, v]) => {
+        if (k !== 'tanggal_surat' && k !== 'diterima_tanggal') {
+          submitData.append(k, v)
+        }
+      })
+
+      // 2. Masukkan tanggal yang SUDAH DIUBAH formatnya ke "1 Januari 2025"
+      submitData.append('tanggal_surat', formatDateIndo(formData.tanggal_surat))
+      submitData.append('diterima_tanggal', formatDateIndo(formData.diterima_tanggal))
+
+      // 3. Data tambahan lain
       submitData.append('tujuan_jabatan', 'Kepala Bapelitbangda')
       selectedFiles.forEach(file => submitData.append('photos', file))
+
+      // Debug: Cek di console browser untuk memastikan formatnya benar
+      console.log("Tanggal Surat:", formatDateIndo(formData.tanggal_surat)) 
+      console.log("Diterima Tanggal:", formatDateIndo(formData.diterima_tanggal))
+
       await api.post('/surat-masuk', submitData)
       toast.success('Surat & disposisi berhasil dibuat!')
       navigate('/admin')
     } catch (error) {
+      console.error(error)
       toast.error(error.response?.data?.error || 'Gagal mengirim surat')
     } finally {
       setLoading(false)
     }
   }
 
-  const closeTutorialModal = () => setIsTutorialModalOpen(false)
-
-  // Fungsi untuk mendapatkan ikon berdasarkan tipe file
-  const getFileIcon = (file) => {
-    if (file.type === 'application/pdf') {
-      return <File className="w-8 h-8 text-red-500" />
-    }
-    return <File className="w-8 h-8 text-blue-500" />
-  }
-
-  // Fungsi untuk mendapatkan teks berdasarkan tipe file
-  const getFileText = (file) => {
-    if (file.type === 'application/pdf') {
-      return 'PDF File'
-    }
-    return 'Image File'
-  }
 
   return (
     <div className='min-h-screen'>
@@ -241,38 +216,42 @@ const AdminBuatSuratMasuk = () => {
                 required
               />
             </div>
+            
+            {/* === UPDATE: MENGGUNAKAN DATE PICKER (Tanggal Surat) === */}
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: '#6D4C41' }}>
                 Tanggal Surat <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
+                type="date"
                 name="tanggal_surat"
                 value={formData.tanggal_surat}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border-2 outline-none bg-[#FDFCFB] border-[#EDE6E3] focus:border-teal-400 focus:shadow-lg focus:ring-4 focus:ring-teal-400/20 hover:border-teal-400 transition-all duration-300"
+                className="w-full px-4 py-3 rounded-xl border-2 outline-none bg-[#FDFCFB] border-[#EDE6E3] focus:border-teal-400 focus:shadow-lg focus:ring-4 focus:ring-teal-400/20 hover:border-teal-400 transition-all duration-300 cursor-pointer"
                 style={{ color: '#2E2A27' }}
-                placeholder="Contoh: 1 Januari 2025"
                 required
               />
             </div>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            {/* === UPDATE: MENGGUNAKAN DATE PICKER (Diterima Tanggal) === */}
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: '#6D4C41' }}>
                 Diterima Tanggal <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
+                type="date"
                 name="diterima_tanggal"
                 value={formData.diterima_tanggal}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border-2 outline-none bg-[#FDFCFB] border-[#EDE6E3] focus:border-teal-400 focus:shadow-lg focus:ring-4 focus:ring-teal-400/20 hover:border-teal-400 transition-all duration-300"
+                className="w-full px-4 py-3 rounded-xl border-2 outline-none bg-[#FDFCFB] border-[#EDE6E3] focus:border-teal-400 focus:shadow-lg focus:ring-4 focus:ring-teal-400/20 hover:border-teal-400 transition-all duration-300 cursor-pointer"
                 style={{ color: '#2E2A27' }}
-                placeholder="Contoh: 1 Januari 2025"
                 required
               />
             </div>
+
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: '#6D4C41' }}>
                 Nomor Agenda <span className="text-red-500">*</span>
@@ -306,7 +285,7 @@ const AdminBuatSuratMasuk = () => {
           </div>
         </div>
 
-        {/* Upload Foto Section */}
+        {/* Upload Foto Section (TIDAK BERUBAH) */}
         <div className="bg-white p-6 rounded-2xl border-2 border-[#EDE6E3] shadow-md hover:shadow-lg transition-all duration-300">
           <h2 className="text-base font-semibold mb-6 flex items-center" style={{ color: '#2E2A27' }}>
             <div className="p-2.5 bg-white rounded-xl shadow-md mr-3">
@@ -335,7 +314,6 @@ const AdminBuatSuratMasuk = () => {
                 {selectedFiles.map((file, index) => (
                   <div key={index} className="relative group">
                     {file.type === 'application/pdf' ? (
-                      // Tampilan untuk PDF
                       <div
                         className="w-full h-24 bg-[#FDFCFB] rounded-lg flex flex-col items-center justify-center cursor-pointer border-2 border-[#EDE6E3] hover:border-teal-400 transition-all duration-300"
                         onClick={() => openPreviewModal(null, index)}
@@ -346,7 +324,6 @@ const AdminBuatSuratMasuk = () => {
                         </span>
                       </div>
                     ) : (
-                      // Tampilan untuk gambar
                       <img
                         src={previewUrls[index]}
                         alt=""
@@ -454,119 +431,6 @@ const AdminBuatSuratMasuk = () => {
                 className="max-h-[80vh] rounded-xl shadow-2xl mx-auto border-2 border-[#EDE6E3]"
               />
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Modal Tutorial */}
-      {isTutorialModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="relative bg-white backdrop-blur-sm rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col border-2 border-[#EDE6E3]">
-            <div className="relative flex items-center justify-between p-5 pb-4">
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="w-10 h-10 bg-teal-400 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold" style={{ color: '#2E2A27' }}>
-                    Tutorial Interaktif
-                  </h3>
-                  <p className="text-sm mt-1" style={{ color: '#6D4C41' }}>Buat Surat dan Lembar Disposisi</p>
-                </div>
-              </div>
-              <button
-                onClick={closeTutorialModal}
-                className="p-3 rounded-2xl hover:bg-[#FDFCFB] transition-all duration-200 group" style={{ color: '#6D4C41' }}
-              >
-                <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
-              </button>
-            </div>
-            <div className="px-8 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium" style={{ color: '#2E2A27' }}>
-                  Langkah {currentStep + 1} dari {steps.length}
-                </span>
-                <span className="text-sm" style={{ color: '#6D4C41' }}>
-                  {Math.round(((currentStep + 1) / steps.length) * 100)}% selesai
-                </span>
-              </div>
-              <div className="w-full bg-[#EDE6E3] rounded-full h-1 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-teal-400 to-[#6D4C41] rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            <div className="flex-grow px-8 pb-4">
-              <div className="relative">
-                <div className="text-center space-y-6 animate-in mt-6 fade-in slide-in-from-right-4 duration-500" key={currentStep}>
-                  <div className="flex justify-center">
-                    <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-black rounded-3xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-200">
-                      <div className="text-white">
-                        {steps[currentStep].icon}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <h4 className="text-base font-semibold" style={{ color: '#2E2A27' }}>
-                      {steps[currentStep].title}
-                    </h4>
-                    <p className="leading-relaxed max-w-md mx-auto" style={{ color: '#6D4C41' }}>
-                      {steps[currentStep].description}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex justify-center mt-5">
-                  <div className="flex space-x-4">
-                    {steps.map((_, index) => (
-                      <div
-                        key={index}
-                        className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentStep
-                          ? 'bg-teal-400 scale-125'
-                          : index < currentStep
-                            ? 'bg-green-400 scale-110'
-                            : 'bg-[#EDE6E3]'
-                          }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-5 border-t border-[#EDE6E3]">
-              <button
-                onClick={prevStep}
-                disabled={currentStep === 0}
-                className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${currentStep === 0
-                  ? 'text-[#6D4C41] cursor-not-allowed bg-[#FDFCFB] border border-[#EDE6E3]'
-                  : 'text-[#2E2A27] hover:bg-[#FDFCFB] cursor-pointer hover:-translate-y-0.5 bg-white border border-[#EDE6E3] hover:border-teal-400'
-                  }`}
-              >
-                Sebelumnya
-              </button>
-              <div className="flex space-x-3">
-                {currentStep < steps.length - 1 ? (
-                  <button
-                    onClick={nextStep}
-                    className="px-6 py-3 shadow-lg hover:-translate-y-0.5 border border-[#EDE6E3] bg-gradient-to-r from-teal-400 to-black text-sm text-white cursor-pointer rounded-2xl font-medium hover:shadow-lg flex items-center space-x-2 group hover:from-[#6D4C41] hover:to-[#2E2A27] transition-all duration-300"
-                  >
-                    <span>Selanjutnya</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={closeTutorialModal}
-                    className="px-6 py-3 bg-green-600 hover:-translate-y-0.5 cursor-pointer text-sm text-white rounded-2xl font-medium hover:shadow-lg transition-all duration-200 transform flex items-center space-x-2 hover:bg-green-700"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Selesai</span>
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       )}
