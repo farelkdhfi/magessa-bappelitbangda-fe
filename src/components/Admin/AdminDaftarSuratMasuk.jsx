@@ -531,7 +531,7 @@ const AdminDaftarSuratMasuk = () => {
                         ) : (
                           <>
                             <Download className="w-4 h-4" />
-                            Download PDF
+                            Download Lembar Disposisi
                           </>
                         )}
                       </button>

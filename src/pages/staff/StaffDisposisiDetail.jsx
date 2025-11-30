@@ -344,6 +344,26 @@ const StaffDisposisiDetail = () => {
       (disposisi.status_dari_bawahan === 'diterima' || disposisi.status_dari_bawahan === 'diproses');
   };
 
+  const formatDisplayDate = (dateString) => {
+    if (!dateString) return '-'
+    
+    // Coba parse ke date object
+    const date = new Date(dateString)
+    
+    // Jika hasilnya "Invalid Date" (karena inputnya "1 Januari 2025"),
+    // maka kembalikan string aslinya saja.
+    if (isNaN(date.getTime())) {
+      return dateString
+    }
+
+    // Jika valid date (format ISO YYYY-MM-DD), format ke Indo
+    return date.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -403,7 +423,7 @@ const StaffDisposisiDetail = () => {
                   ) : (
                     <>
                       <FileText className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                      Download PDF
+                      Download Lembar Disposisi
                     </>
                   )}
                 </button>
@@ -612,14 +632,18 @@ const StaffDisposisiDetail = () => {
                         <Calendar className="w-4 h-4 mr-2" />
                         <p className="text-sm font-semibold">Tanggal Surat</p>
                       </div>
-                      <p className="font-semibold">{new Date(disposisi.tanggal_surat).toLocaleDateString('id-ID')}</p>
+                      <p className="font-semibold">
+                        {formatDisplayDate(disposisi.tanggal_surat)}
+                      </p>
                     </div>
                     <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                       <div className="flex items-center mb-2">
                         <Calendar className="w-4 h-4 mr-2" />
                         <p className="text-sm font-semibold">Diterima Tanggal</p>
                       </div>
-                      <p className="font-semibold">{new Date(disposisi.diterima_tanggal).toLocaleDateString('id-ID')}</p>
+                      <p className="font-semibold">
+                        {formatDisplayDate(disposisi.diterima_tanggal)}
+                      </p>
                     </div>
                     <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                       <div className="flex items-center mb-2">
