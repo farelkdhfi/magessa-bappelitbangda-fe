@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
-import { Trash2, Paperclip, Calendar, Clock, FileText, User, MessageSquare, AlertCircle, AlertTriangle, Building2, X, Search } from 'lucide-react'; // ✅ Hapus Filter ikon karena tidak dipakai
+import { Trash2, Calendar, Clock, FileText, User, AlertTriangle, X, Search, Mail, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import LoadingSpinner from '../Ui/LoadingSpinner';
 import isImageFile from '../../utils/isImageFile';
 import ImageModal from '../Ui/ImageModal';
 
@@ -11,11 +10,7 @@ const AdminDaftarSuratKeluar = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
-
-  // ✅ State untuk modal hapus
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, suratId: null, suratInfo: null });
-
-  // ✅ State hanya untuk pencarian — HAPUS statusFilter
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredData, setFilteredData] = useState([]);
 
@@ -37,10 +32,8 @@ const AdminDaftarSuratKeluar = () => {
     }
   };
 
-  // ✅ Effect hanya untuk search — HAPUS logika filter status
   useEffect(() => {
     let filtered = suratList;
-
     if (searchTerm.trim() !== '') {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(surat =>
@@ -50,9 +43,8 @@ const AdminDaftarSuratKeluar = () => {
         surat.catatan_internal?.toLowerCase().includes(searchLower)
       );
     }
-
     setFilteredData(filtered);
-  }, [suratList, searchTerm]); // ✅ Hapus statusFilter dari dependency
+  }, [suratList, searchTerm]);
 
   const openDeleteModal = (surat) => {
     setDeleteModal({
@@ -66,15 +58,11 @@ const AdminDaftarSuratKeluar = () => {
     });
   };
 
-  const closeDeleteModal = () => {
-    setDeleteModal({ isOpen: false, suratId: null, suratInfo: null });
-  };
-
   const handleConfirmDelete = async (id) => {
     try {
       await api.delete(`/surat-keluar/${id}`);
       toast.success('Surat berhasil dihapus');
-      closeDeleteModal();
+      setDeleteModal({ isOpen: false, suratId: null, suratInfo: null });
       fetchSuratKeluar();
     } catch (err) {
       const errorMessage = 'Gagal menghapus surat keluar';
@@ -96,333 +84,225 @@ const AdminDaftarSuratKeluar = () => {
     });
   };
 
-  // ❌ HAPUS getStatusBadge — karena tidak ada status
-
-  // ✅ Fungsi reset — hanya reset search
   const clearFilters = () => {
     setSearchTerm('');
-    // ❌ Hapus setStatusFilter karena tidak ada
   };
+
+  // --- NEW STYLE COMPONENTS ---
+  
+  const StatItem = ({ label, count, icon: Icon }) => (
+    <div className="relative overflow-hidden p-6 rounded-3xl border bg-zinc-900/50 backdrop-blur-sm border-white/5 text-white hover:border-white/20 transition-all duration-300">
+        <div className="flex justify-between items-start mb-4">
+            <div className="p-2 rounded-xl border bg-white/5 border-white/5">
+                <Icon className="w-5 h-5 text-zinc-400" />
+            </div>
+        </div>
+        <div>
+            <h3 className="text-4xl font-light tracking-tight mb-1">{count}</h3>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-zinc-500">{label}</p>
+        </div>
+    </div>
+  );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner />
-      </div>
+        <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+            <span className="text-xs text-zinc-500 uppercase tracking-widest animate-pulse">Memuat Arsip...</span>
+        </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md mx-auto shadow-sm">
-            <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900">Terjadi Kesalahan</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={fetchSuratKeluar}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-full font-medium transition shadow"
-            >
-              Coba Lagi
-            </button>
-          </div>
+      <div className="flex flex-col justify-center items-center py-20 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20">
+            <AlertCircle className="w-8 h-8 text-red-500" />
         </div>
+        <h3 className="text-white font-semibold text-lg mb-2">Terjadi Kesalahan</h3>
+        <p className="text-zinc-500 text-sm mb-6 max-w-xs mx-auto">{error}</p>
+        <button onClick={fetchSuratKeluar} className="px-6 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-zinc-200 transition">
+            Coba Lagi
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <main className="">
-
-        {/* ✅ Search Section — HAPUS bagian filter status */}
-        <div className="mb-6 p-4 bg-white rounded-2xl shadow-sm border border-slate-200">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Cari berdasarkan nama, tujuan, keterangan..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 text-sm rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 hover:bg-gray-50 rounded-r-full transition-all"
-                >
-                  <X className="h-5 w-5 text-gray-500" />
-                </button>
-              )}
-            </div>
-
-            {/* ❌ HAPUS Filter Status Dropdown */}
-
-            {/* Clear Filters Button — hanya muncul jika ada search */}
-            {searchTerm && (
-              <button
-                onClick={clearFilters}
-                className="px-4 py-2.5 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 font-medium transition flex items-center gap-2"
-              >
-                <X className="h-4 w-4" /> Reset
-              </button>
-            )}
-          </div>
-
-          {/* Results Info — HAPUS penyebutan status */}
-          <div className="flex items-center justify-between text-sm text-gray-600 mt-4">
-            <span>
-              Menampilkan {filteredData.length} dari {suratList.length} surat
-              {searchTerm && (
-                <span className="ml-1">
-                  untuk pencarian "{searchTerm}"
-                </span>
-              )}
-              {/* ❌ HAPUS bagian status */}
-            </span>
-          </div>
+    <div className="w-full max-w-7xl mx-auto pb-20">
+      
+        {/* 1. STATS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <StatItem label="Total Surat Keluar" count={suratList.length} icon={Mail} />
+            <StatItem label="Bulan Ini" count={suratList.filter(s => new Date(s.created_at).getMonth() === new Date().getMonth()).length} icon={Calendar} />
         </div>
 
-        {/* ✅ Empty State — jika tidak ada hasil setelah search */}
-        {filteredData.length === 0 && suratList.length > 0 && (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-              <FileText className="w-10 h-10 text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Tidak Ada Hasil yang Cocok</h3>
-            <p className="text-gray-500 max-w-md mx-auto">
-              Coba ubah kata kunci pencarian.
-            </p>
-            <button
-              onClick={clearFilters}
-              className="mt-4 text-indigo-600 hover:text-indigo-800 font-medium"
-            >
-              Reset pencarian
-            </button>
-          </div>
-        )}
-
-        {suratList.length === 0 && (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-              <FileText className="w-10 h-10 text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Tidak Ada Surat Keluar</h3>
-            <p className="text-gray-500">Belum ada surat keluar yang tersedia.</p>
-          </div>
-        )}
-
-        {filteredData.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {filteredData.map((surat) => (
-              <article
-                key={surat.id}
-                className="group relative bg-white space-y-3 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-200"
-              >
-                {/* Header — ❌ HAPUS badge status */}
-                <div className="border-b border-gray-50/50 pb-3">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 truncate">
-                        {surat.nama_surat}
-                      </h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                        <span className="font-medium text-gray-700">Tujuan:</span> {surat.ditujukan_ke?.replace(/-/g, ' ') || '-'}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      {/* ❌ HAPUS getStatusBadge(surat.status) */}
-                      <span className="text-xs text-gray-500 mt-1">{formatDate(surat.created_at)}</span>
-                    </div>
-                  </div>
+        {/* 2. SEARCH BAR */}
+        <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-2xl p-4 mb-8 sticky top-4 z-20 shadow-2xl shadow-black/20">
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input 
+                        type="text"
+                        placeholder="Cari perihal, tujuan, atau keterangan..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 transition-all"
+                    />
+                    {searchTerm && (
+                        <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full text-zinc-500 hover:text-white transition">
+                            <X className="w-3 h-3" />
+                        </button>
+                    )}
                 </div>
+            </div>
+            <div className="mt-3 px-1 flex justify-between items-center text-[10px] uppercase tracking-widest text-zinc-500 font-medium">
+                <span>Menampilkan {filteredData.length} data</span>
+            </div>
+        </div>
 
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mt-0.5">
-                        <Calendar className="w-5 h-5 text-teal-400" />
-                      </div>
-                      <div>
-                        <p className="text-gray-500 font-medium">Tanggal Surat</p>
-                        <p className="text-gray-800">{formatDate(surat.tanggal_surat)}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mt-0.5">
-                        <Clock className="w-5 h-5 text-teal-400" />
-                      </div>
-                      <div>
-                        <p className="text-gray-500 font-medium">Dibuat</p>
-                        <p className="text-gray-800">{formatDate(surat.created_at)}</p>
-                      </div>
-                    </div>
-                  </div>
+        {/* 3. CONTENT GRID */}
+        {filteredData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-3xl bg-zinc-900/20">
+                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-white/5">
+                    <Search className="w-6 h-6 text-zinc-600" />
                 </div>
-
-                {surat.keterangan && (
-                  <div className="border-t border-gray-50/50 pt-3">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Keterangan:
-                    </h4>
-                    <p className="text-gray-700 leading-relaxed text-sm">
-                      {surat.keterangan}
-                    </p>
-                  </div>
+                <h3 className="text-white font-medium mb-1">Tidak ditemukan</h3>
+                <p className="text-zinc-500 text-sm">Coba ubah kata kunci pencarian anda.</p>
+                {searchTerm && (
+                    <button onClick={clearFilters} className="mt-4 text-xs text-white underline underline-offset-4">Reset Pencarian</button>
                 )}
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredData.map((surat) => (
+                    <article key={surat.id} className="group bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 hover:border-white/20 transition-all duration-300 flex flex-col h-full">
+                        
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-white leading-tight mb-1 group-hover:text-zinc-100 transition-colors line-clamp-2">
+                                    {surat.nama_surat}
+                                </h3>
+                                <div className="flex items-center gap-2 text-xs text-zinc-400 mt-2">
+                                    <User className="w-3 h-3" />
+                                    <span className="capitalize">Tujuan: {surat.ditujukan_ke?.replace(/-/g, ' ') || '-'}</span>
+                                </div>
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 bg-zinc-950 border border-white/5 px-2 py-1 rounded-lg">
+                                {formatDate(surat.created_at)}
+                            </span>
+                        </div>
 
-                {surat.catatan_internal && (
-                  <div className="border-t border-gray-50/50 pt-3">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Catatan Internal:
-                    </h4>
-                    <p className="text-gray-700 leading-relaxed text-sm italic bg-gray-50 p-3 rounded-lg">
-                      {surat.catatan_internal}
-                    </p>
-                  </div>
-                )}
-
-                {surat.file_count > 0 && (
-                  <div className="p-4">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Paperclip className="w-5 h-5" />
-                      Lampiran: ({surat.file_count})
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {surat.files.map((file) => {
-                        const isImage = isImageFile(file);
-                        return (
-                          <div
-                            key={file.id}
-                            onClick={() => {
-                              if (isImage) {
-                                setSelectedImage(file.url);
-                              } else {
-                                window.open(file.url, '_blank', 'noopener,noreferrer');
-                              }
-                            }}
-                            className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
-                          >
-                            {isImage ? (
-                              <img
-                                src={file.url}
-                                alt={file.filename}
-                                className="w-20 h-20 object-cover group-hover:brightness-110 transition-transform duration-500 rounded-lg shadow-lg"
-                                onError={(e) => {
-                                  e.target.src = 'https://via.placeholder.com/200?text=No+Image';
-                                }}
-                              />
-                            ) : (
-                              <div className="text-[#D9534F] flex flex-col items-center justify-center w-20 h-20 bg-gray-100 rounded-lg">
-                                <FileText className="w-8 h-8" />
-                                <p className="text-xs font-bold mt-1 text-center break-words">
-                                  {file.filename.split('.').pop()?.toUpperCase() || 'FILE'}
+                        {/* Metadata Grid */}
+                        <div className="grid grid-cols-2 gap-4 mb-6 bg-white/5 rounded-2xl p-4 border border-white/5">
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Tanggal Surat</p>
+                                <div className="flex items-center gap-2 text-zinc-300 text-xs">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    {formatDate(surat.tanggal_surat)}
+                                </div>
+                            </div>
+                             <div>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Diinput Pada</p>
+                                <div className="flex items-center gap-2 text-zinc-300 text-xs">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {formatDate(surat.created_at)}
+                                </div>
+                            </div>
+                            <div className="col-span-2 pt-2 border-t border-white/5">
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Keterangan</p>
+                                <p className="text-xs text-zinc-400 leading-relaxed italic line-clamp-2">
+                                    {surat.keterangan || "Tidak ada keterangan."}
                                 </p>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                            </div>
+                        </div>
 
-                <div className="space-y-3 pt-3 border-t border-gray-50/50">
-                  <button
-                    onClick={() => openDeleteModal(surat)}
-                    className="inline-flex w-full justify-center items-center gap-2 px-4 py-3 bg-white border border-red-400 hover:-translate-y-0.5 text-red-400 rounded-full text-sm font-medium shadow transition-all duration-200"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Hapus
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </main>
+                        {/* Lampiran */}
+                        {surat.files && surat.files.length > 0 && (
+                            <div className="mb-6">
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3 flex items-center gap-2">
+                                    <ImageIcon className="w-3 h-3" /> Lampiran ({surat.files.length})
+                                </p>
+                                <div className="flex flex-wrap gap-3">
+                                    {surat.files.slice(0, 4).map((file) => {
+                                        const isImage = isImageFile(file);
+                                        return (
+                                            <div 
+                                                key={file.id}
+                                                onClick={() => isImage ? setSelectedImage(file.url) : window.open(file.url, '_blank')}
+                                                className="w-12 h-12 rounded-lg bg-zinc-950 border border-white/10 overflow-hidden cursor-pointer hover:border-white/40 transition-all flex items-center justify-center relative group/img"
+                                                title={file.filename}
+                                            >
+                                                {isImage ? (
+                                                    <img src={file.url} alt="Lampiran" className="w-full h-full object-cover opacity-70 group-hover/img:opacity-100 transition-opacity" />
+                                                ) : (
+                                                    <FileText className="w-5 h-5 text-zinc-500 group-hover/img:text-white transition-colors" />
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                    {surat.files.length > 4 && (
+                                        <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-white/5 flex items-center justify-center text-xs text-zinc-400">
+                                            +{surat.files.length - 4}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
-      {/* ✅ MODAL HAPUS — tetap dipertahankan */}
-      {deleteModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 rounded-full">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">Konfirmasi Hapus</h3>
-                    <p className="text-sm text-gray-500">Tindakan ini tidak dapat dibatalkan</p>
-                  </div>
-                </div>
-                <button
-                  onClick={closeDeleteModal}
-                  className="p-2 hover:bg-gray-100 rounded-full transition"
-                >
-                  <X className="h-5 w-5 text-gray-600" />
-                </button>
-              </div>
-
-              <div className="mb-6">
-                <p className="text-gray-800 font-medium mb-3">
-                  Apakah Anda yakin ingin menghapus surat:
-                </p>
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <FileText className="w-4 h-4 text-gray-600" />
-                      <span className="font-semibold text-gray-900">
-                        {deleteModal.suratInfo?.nama_surat}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="w-4 h-4 text-gray-600" />
-                      <span className="text-gray-900 capitalize">
-                        {deleteModal.suratInfo?.ditujukan_ke?.replace(/-/g, ' ')}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-gray-600" />
-                      <span className="text-gray-900">
-                        {formatDate(deleteModal.suratInfo?.created_at)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={closeDeleteModal}
-                  className="px-4 py-2.5 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 font-medium transition"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={() => handleConfirmDelete(deleteModal.suratId)}
-                  className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full font-medium transition"
-                >
-                  Hapus
-                </button>
-              </div>
+                        {/* Actions */}
+                        <div className="mt-auto pt-4 border-t border-white/5">
+                            <button 
+                                onClick={() => openDeleteModal(surat)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs font-bold rounded-xl hover:bg-rose-500 hover:text-white transition-all"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Hapus Arsip
+                            </button>
+                        </div>
+                    </article>
+                ))}
             </div>
-          </div>
-        </div>
-      )}
+        )}
 
-      <ImageModal
-        selectedImage={selectedImage}
-        setSelectedImage={setSelectedImage}
-      />
+        {/* 4. MODALS */}
+        
+        {/* Delete Modal */}
+        {deleteModal.isOpen && (
+             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                <div className="bg-zinc-950 border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+                    <div className="p-6 text-center">
+                        <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="w-8 h-8 text-rose-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-white mb-2">Hapus Arsip?</h3>
+                        <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
+                            Surat <span className="text-white font-medium">"{deleteModal.suratInfo?.nama_surat}"</span> akan dihapus permanen.
+                        </p>
+                        <div className="flex gap-3 justify-center">
+                            <button 
+                                onClick={() => setDeleteModal({ isOpen: false, suratId: null, suratInfo: null })} 
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 hover:text-white transition-all"
+                            >
+                                Batal
+                            </button>
+                            <button 
+                                onClick={() => handleConfirmDelete(deleteModal.suratId)} 
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-900/20 transition-all"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        <ImageModal
+            selectedImage={selectedImage}
+            setSelectedImage={setSelectedImage}
+        />
     </div>
   );
 };

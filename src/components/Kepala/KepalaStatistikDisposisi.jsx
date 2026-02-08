@@ -1,10 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { FileText, TrendingUp, Clock, CheckCircle, AlertCircle, RefreshCcw, Activity, Eye, Archive } from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  Legend 
+} from 'recharts';
+import { 
+  TrendingUp, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle, 
+  RefreshCcw, 
+  Activity, 
+  Eye, 
+  Archive, 
+  PieChart as PieChartIcon,
+  BarChart3
+} from 'lucide-react';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../Ui/LoadingSpinner';
-import StatCard from '../Ui/StatCard';
+
+// === SUB-COMPONENTS FOR STYLE CONSISTENCY ===
+
+// 1. Stat Box (Bento Style - Reused)
+const StatBox = ({ title, count, icon: Icon, colorClass, gradientInfo }) => (
+  <div className="relative group overflow-hidden bg-zinc-900/30 border border-white/5 p-5 rounded-2xl hover:bg-white/5 transition-all duration-300">
+    {/* Background Glow */}
+    <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full blur-2xl opacity-20 ${gradientInfo}`} />
+    
+    <div className={`absolute right-2 top-2 p-2 rounded-xl bg-white/5 ${colorClass} group-hover:scale-110 transition-transform z-10`}>
+      <Icon className="w-4 h-4" />
+    </div>
+    
+    <div className="mt-4 relative z-10">
+      <h3 className="text-2xl font-semibold text-white tracking-tight">{count}</h3>
+      <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mt-1">{title}</p>
+    </div>
+  </div>
+);
 
 const KepalaStatistikDisposisi = () => {
     const [stats, setStats] = useState(null);
@@ -30,56 +71,54 @@ const KepalaStatistikDisposisi = () => {
         fetchStatistik();
     }, []);
 
-    // === PALET WARNA WARNANI UNTUK SEMUA STATUS ===
-    const colorPalette = [
-        '#00d5be',
-        '#00d5be',
-        '#000000',
-        '#00d5be',
-    ];
-
+    // === KONFIGURASI WARNA & TEMA (NEON DARK MODE) ===
     const statusConfig = {
         belum_dibaca: {
-            color: colorPalette[0],
-            gradient: 'from-teal-400 to-teal-600',
-            bgGradient: 'from-teal-50 to-teal-100',
+            color: '#f43f5e', // Rose-500
+            label: 'Belum Dibaca',
             icon: AlertCircle,
-            label: 'Belum Dibaca'
+            twText: 'text-rose-400',
+            twBg: 'bg-rose-500'
         },
         diproses: {
-            color: colorPalette[1],
-            gradient: 'from-emerald-500 to-emerald-600',
-            bgGradient: 'from-emerald-50 to-emerald-100',
+            color: '#f59e0b', // Amber-500
+            label: 'Diproses',
             icon: Activity,
-            label: 'Diproses'
+            twText: 'text-amber-400',
+            twBg: 'bg-amber-500'
         },
         selesai: {
-            color: colorPalette[2],
-            gradient: 'from-violet-500 to-violet-600',
-            bgGradient: 'from-violet-50 to-violet-100',
-            icon: CheckCircle,
-            label: 'Selesai'
+            color: '#10b981', // Emerald-500
+            label: 'Selesai',
+            icon: CheckCircle2,
+            twText: 'text-emerald-400',
+            twBg: 'bg-emerald-500'
         },
         sudah_dibaca: {
-            color: colorPalette[3],
-            gradient: 'from-amber-500 to-amber-600',
-            bgGradient: 'from-amber-50 to-amber-100',
+            color: '#3b82f6', // Blue-500
+            label: 'Sudah Dibaca',
             icon: Eye,
-            label: 'Sudah Dibaca'
+            twText: 'text-blue-400',
+            twBg: 'bg-blue-500'
         }
     };
 
-
-    // === CUSTOM TOOLTIP (DISAMAKAN DENGAN GAYA STANDAR) ===
+    // Custom Tooltip untuk Recharts (Dark Glass Style)
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-white border-2 border-[#EDE6E3] rounded-2xl shadow-xl p-4">
-                    <p className="font-semibold text-black mb-2">{label}</p>
+                <div className="bg-zinc-950/90 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl p-4">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">{label}</p>
                     {payload.map((entry, index) => (
-                        <p key={index} className="text-sm font-medium text-black">
-                            Jumlah: {entry.value}
-                        </p>
+                        <div key={index} className="flex items-center gap-2">
+                            <div 
+                                className="w-2 h-2 rounded-full" 
+                                style={{ backgroundColor: entry.payload.color }} 
+                            />
+                            <p className="text-sm font-semibold text-white">
+                                {entry.value} <span className="text-zinc-500 font-normal">Surat</span>
+                            </p>
+                        </div>
                     ))}
                 </div>
             );
@@ -87,23 +126,17 @@ const KepalaStatistikDisposisi = () => {
         return null;
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <LoadingSpinner />
-            </div>
-        );
-    }
+    if (loading) return <div className="py-20 flex justify-center"><LoadingSpinner /></div>;
 
     if (error) {
         return (
-            <div className="text-center py-12 bg-white rounded-2xl border-2 border-[#EDE6E3] shadow-sm">
-                <AlertCircle className="h-12 w-12 text-black mx-auto mb-2" />
-                <p className="text-black font-semibold mb-2">Terjadi Kesalahan</p>
-                <p className="text-black text-sm mb-2">{error}</p>
+            <div className="flex flex-col items-center justify-center py-20 bg-zinc-900/30 border border-white/5 rounded-3xl backdrop-blur-sm">
+                <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
+                <p className="text-white font-medium mb-1">Gagal memuat data</p>
+                <p className="text-zinc-500 text-sm mb-6">{error}</p>
                 <button
                     onClick={fetchStatistik}
-                    className="bg-gradient-to-br from-teal-400 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg border border-[#EDE6E3]"
+                    className="px-6 py-2 bg-white text-black hover:bg-zinc-200 rounded-full text-sm font-bold transition-colors"
                 >
                     Coba Lagi
                 </button>
@@ -113,197 +146,183 @@ const KepalaStatistikDisposisi = () => {
 
     if (!stats) return null;
 
-    // === DATA UNTUK GRAFIK ===
+    // Persiapan Data Chart
     const chartData = Object.entries(stats.statistik_status)
         .filter(([key]) => key !== 'total' && key !== 'diteruskan')
         .map(([key, value]) => ({
-            name: statusConfig[key].label,
+            name: statusConfig[key]?.label || key,
             value,
             key,
-            color: statusConfig[key].color // 👈 Tambahkan warna untuk konsistensi
+            color: statusConfig[key]?.color || '#71717a'
         }));
 
     const pieData = chartData.filter(item => item.value > 0);
 
     return (
-        <div>
-            {/* Header */}
-            <div className="flex items-center justify-between mb-2">
+        <div className="space-y-6 animate-in fade-in duration-500">
+            
+            {/* 1. Header & Controls */}
+            <div className="flex items-center justify-end">
                 <button
                     onClick={fetchStatistik}
-                    className="bg-white hover:bg-[#FDFCFB] border-2 border-[#EDE6E3] gap-x-2 flex items-center text-black px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:border-white"
+                    className="p-2.5 bg-zinc-800/50 border border-white/5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
                 >
-                    <RefreshCcw className="w-4 h-4" /> Refresh
+                    <RefreshCcw className="w-4 h-4" /> Refresh Data
                 </button>
             </div>
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
-                <StatCard
-                    title="Total Disposisi"
-                    count={stats.statistik_status.total.toLocaleString('id-ID')}
-                    icon={Archive}
-                    bgColor="bg-white"
-                    textColor="text-black"
-                    iconBg="bg-teal-400"
-                    borderColor="border-slate-200"
-                    iconColor='text-white'
+            {/* 2. Stat Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <StatBox 
+                    title="Total Disposisi" 
+                    count={stats.statistik_status.total.toLocaleString('id-ID')} 
+                    icon={Archive} 
+                    colorClass="text-zinc-300" 
+                    gradientInfo="bg-white"
                 />
-                <StatCard
-                    title="Belum Dibaca"
-                    count={stats.statistik_status.belum_dibaca || 0}
-                    icon={Clock}
-                    bgColor="bg-white"
-                    textColor="text-black"
-                    iconBg="bg-slate-200"
-                    borderColor="border-slate-200"
-                    iconColor="text-black"
+                <StatBox 
+                    title="Belum Dibaca" 
+                    count={stats.statistik_status.belum_dibaca || 0} 
+                    icon={AlertCircle} 
+                    colorClass="text-rose-400" 
+                    gradientInfo="bg-rose-500"
                 />
-                <StatCard
-                    title="Diproses"
-                    count={stats.statistik_status.diproses || 0}
-                    icon={Activity}
-                    bgColor="bg-white"
-                    textColor="text-black"
-                    iconBg="bg-neutral-500"
-                    borderColor="border-slate-200"
-                    iconColor="text-white"
+                <StatBox 
+                    title="Diproses" 
+                    count={stats.statistik_status.diproses || 0} 
+                    icon={Activity} 
+                    colorClass="text-amber-400" 
+                    gradientInfo="bg-amber-500"
                 />
-                <StatCard
-                    title="Selesai"
-                    count={stats.statistik_status.selesai || 0}
-                    icon={CheckCircle}
-                    bgColor="bg-black"
-                    textColor="text-white"
-                    iconBg="bg-white"
-                    borderColor="border-slate-200"
-                    iconColor="text-teal-400"
+                <StatBox 
+                    title="Selesai" 
+                    count={stats.statistik_status.selesai || 0} 
+                    icon={CheckCircle2} 
+                    colorClass="text-emerald-400" 
+                    gradientInfo="bg-emerald-500"
                 />
             </div>
 
-            {/* Charts Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 mb-2">
-                {/* Bar Chart */}
-                <div className="bg-white rounded-2xl shadow-sm p-4 border-2 border-[#EDE6E3]">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2.5 bg-slate-200 rounded-xl shadow-md">
-                                <Activity className="h-5 w-5 text-black" />
-                            </div>
-                            <div>
-                                <h3 className="text-base font-bold text-black">Distribusi Status</h3>
-                                <p className="text-sm font-medium text-black opacity-80">Grafik batang status disposisi</p>
-                            </div>
-                        </div>
-                    </div>
-                    <ResponsiveContainer width="100%" height={350}>
-                        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                            <defs>
-                                {chartData.map((entry, index) => (
-                                    <linearGradient key={index} id={`gradient-${entry.key}`} x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor={entry.color} stopOpacity={0.8} />
-                                        <stop offset="100%" stopColor={entry.color} stopOpacity={0.3} />
-                                    </linearGradient>
-                                ))}
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#EDE6E3" />
-                            <XAxis
-                                dataKey="name"
-                                tick={{ fontSize: 12, fill: 'black' }}
-                                angle={-45}
-                                textAnchor="end"
-                                height={80}
-                                stroke="black"
-                            />
-                            <YAxis tick={{ fontSize: 12, fill: 'black' }} stroke="black" />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                                {chartData.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={`url(#gradient-${entry.key})`}
-                                    />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* Pie Chart */}
-                <div className="bg-white rounded-2xl shadow-sm p-4 border-2 border-[#EDE6E3]">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2.5 bg-slate-200 rounded-xl shadow-md">
-                                <Eye className="h-5 w-5 text-black" />
-                            </div>
-                            <div>
-                                <h3 className="text-base font-bold text-black">Proporsi Status</h3>
-                                <p className="text-sm font-medium text-black opacity-80">Diagram lingkaran status disposisi</p>
-                            </div>
-                        </div>
-                    </div>
-                    <ResponsiveContainer width="100%" height={350}>
-                        <PieChart>
-                            <Pie
-                                data={pieData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={120}
-                                innerRadius={60}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {pieData.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={entry.color}
-                                    />
-                                ))}
-                            </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend
-                                layout="vertical"
-                                align="right"
-                                verticalAlign="middle"
-                                wrapperStyle={{
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    color: 'black',
-                                    lineHeight: '1.5'
-                                }}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* Summary Cards */}
-            <div className="">
-                <div className="bg-white p-6 rounded-2xl border-2 border-[#EDE6E3] shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2.5 bg-slate-200 rounded-xl shadow-md">
-                            <TrendingUp className="h-5 w-5 text-black" />
+            {/* 3. Charts Section */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                
+                {/* Bar Chart Container */}
+                <div className="bg-zinc-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6 shadow-xl">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20">
+                            <BarChart3 className="h-5 w-5" />
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-black">Ringkasan Statistik</h3>
-                            <p className="text-sm font-medium text-black opacity-80">Persentase berdasarkan status</p>
+                            <h3 className="text-base font-semibold text-white">Distribusi Status</h3>
+                            <p className="text-xs text-zinc-500">Volume disposisi berdasarkan kategori</p>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        {Object.entries(stats.persentase_status)
-                            .filter(([key]) => key !== 'total' && key !== 'diteruskan')
-                            .map(([key, percentage]) => (
-                                <div key={key} className="flex items-center justify-between">
-                                    <span className="font-medium text-black">{statusConfig[key].label}</span>
-                                    <span className="font-semibold text-black">{percentage}%</span>
-                                </div>
-                            ))}
+                    
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    {chartData.map((entry, index) => (
+                                        <linearGradient key={index} id={`gradient-${entry.key}`} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
+                                            <stop offset="100%" stopColor={entry.color} stopOpacity={0.3} />
+                                        </linearGradient>
+                                    ))}
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                <XAxis 
+                                    dataKey="name" 
+                                    tick={{ fontSize: 10, fill: '#71717a' }} 
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dy={10}
+                                />
+                                <YAxis 
+                                    tick={{ fontSize: 10, fill: '#71717a' }} 
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffffff05' }} />
+                                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={`url(#gradient-${entry.key})`} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
-                
-                
+                {/* Pie Chart Container */}
+                <div className="bg-zinc-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6 shadow-xl flex flex-col">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-pink-500/10 rounded-lg text-pink-400 border border-pink-500/20">
+                            <PieChartIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-semibold text-white">Proporsi Data</h3>
+                            <p className="text-xs text-zinc-500">Persentase status disposisi</p>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col md:flex-row items-center gap-8">
+                        {/* Chart */}
+                        <div className="h-[250px] w-full md:w-1/2 relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={pieData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {pieData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip content={<CustomTooltip />} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            {/* Inner Circle Text */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-3xl font-bold text-white">{stats.statistik_status.total}</span>
+                                <span className="text-[10px] uppercase text-zinc-500 tracking-widest">Total</span>
+                            </div>
+                        </div>
+
+                        {/* Custom Legend / Summary */}
+                        <div className="w-full md:w-1/2 space-y-4">
+                            {Object.entries(stats.persentase_status)
+                                .filter(([key]) => key !== 'total' && key !== 'diteruskan')
+                                .map(([key, percentage]) => {
+                                    const config = statusConfig[key];
+                                    if (!config) return null;
+                                    return (
+                                        <div key={key} className="group">
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-2 h-2 rounded-full ${config.twBg}`} />
+                                                    <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">{config.label}</span>
+                                                </div>
+                                                <span className={`text-sm font-bold ${config.twText}`}>{percentage}%</span>
+                                            </div>
+                                            {/* Progress Bar */}
+                                            <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full ${config.twBg} opacity-80`} 
+                                                    style={{ width: `${percentage}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

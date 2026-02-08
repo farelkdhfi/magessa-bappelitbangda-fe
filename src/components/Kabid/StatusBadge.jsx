@@ -4,13 +4,57 @@ import { AlertCircle, Eye, Check, Cog, Flag, Forward } from 'lucide-react';
 
 const getStatusConfig = (status) => {
   const statusConfigs = {
-    'belum dibaca': { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200', icon: AlertCircle, label: 'Belum Dibaca' },
-    'dibaca': { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200', icon: Eye, label: 'Sudah Dibaca' },
-    'diterima': { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200', icon: Check, label: 'Diterima' },
-    'diproses': { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', icon: Cog, label: 'Diproses' },
-    'selesai': { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200', icon: Flag, label: 'Selesai' },
-    'diteruskan': { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-200', icon: Forward, label: 'Diteruskan' }
+    'belum dibaca': { 
+        bg: 'bg-red-500/10', 
+        text: 'text-red-400', 
+        border: 'border-red-500/20', 
+        icon: AlertCircle, 
+        label: 'Belum Dibaca',
+        glow: 'shadow-[0_0_15px_-3px_rgba(239,68,68,0.2)]'
+    },
+    'dibaca': { 
+        bg: 'bg-amber-500/10', 
+        text: 'text-amber-400', 
+        border: 'border-amber-500/20', 
+        icon: Eye, 
+        label: 'Sudah Dibaca',
+        glow: 'shadow-[0_0_15px_-3px_rgba(245,158,11,0.2)]'
+    },
+    'diterima': { 
+        bg: 'bg-emerald-500/10', 
+        text: 'text-emerald-400', 
+        border: 'border-emerald-500/20', 
+        icon: Check, 
+        label: 'Diterima',
+        glow: 'shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]'
+    },
+    'diproses': { 
+        bg: 'bg-blue-500/10', 
+        text: 'text-blue-400', 
+        border: 'border-blue-500/20', 
+        icon: Cog, 
+        label: 'Diproses',
+        glow: 'shadow-[0_0_15px_-3px_rgba(59,130,246,0.2)]'
+    },
+    'selesai': { 
+        bg: 'bg-violet-500/10', 
+        text: 'text-violet-400', 
+        border: 'border-violet-500/20', 
+        icon: Flag, 
+        label: 'Selesai',
+        glow: 'shadow-[0_0_15px_-3px_rgba(139,92,246,0.2)]'
+    },
+    'diteruskan': { 
+        bg: 'bg-indigo-500/10', 
+        text: 'text-indigo-400', 
+        border: 'border-indigo-500/20', 
+        icon: Forward, 
+        label: 'Diteruskan',
+        glow: 'shadow-[0_0_15px_-3px_rgba(99,102,241,0.2)]'
+    }
   };
+  
+  // Fallback to 'belum dibaca' style if status is unknown
   return statusConfigs[status] || statusConfigs['belum dibaca'];
 };
 
@@ -19,9 +63,14 @@ const StatusBadge = ({ status }) => {
   const IconComponent = config.icon;
 
   return (
-    <div className={`inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold ${config.bg} ${config.text} border ${config.border} shadow-sm`}>
-      <IconComponent className="w-4 h-4 mr-2" />
-      {config.label}
+    <div className={`
+      inline-flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-sm transition-all duration-300
+      ${config.bg} ${config.text} ${config.border} ${config.glow}
+    `}>
+      <IconComponent className="w-3.5 h-3.5" />
+      <span className="text-[10px] font-bold uppercase tracking-widest leading-none pt-0.5">
+        {config.label}
+      </span>
     </div>
   );
 };

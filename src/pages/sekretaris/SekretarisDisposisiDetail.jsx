@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { FileText } from 'lucide-react';
+import { FileText, MessageSquare, Users, LayoutGrid } from 'lucide-react'; // Menambahkan beberapa ikon untuk header section
 import ForwardModal from '../../components/Sekretaris/ForwardModal';
 import toast from 'react-hot-toast';
 import { atasanDisposisiService } from '../../services/atasanDisposisiService';
@@ -11,6 +11,7 @@ import DisposisiInfoCard from '../../components/Sekretaris/DisposisiInfoCard';
 import FeedbackBawahan from '../../components/Sekretaris/FeedbackBawahan';
 import MyFeedback from '../../components/Sekretaris/MyFeedback';
 import ImageModal from '../../components/Sekretaris/ImageModal';
+import LoadingSpinner from '../../components/Ui/LoadingSpinner'; 
 
 const SekretarisDisposisiDetail = () => {
   const { id } = useParams();
@@ -328,19 +329,43 @@ const SekretarisDisposisiDetail = () => {
     }
   }, [disposisi?.id]);
 
-  // No data state
+  // ----- STYLE CONSTANTS (Zinc Aesthetic) -----
+  const glassCardStyle = "bg-zinc-900/30 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-2xl shadow-black/20 p-6 md:p-8 relative group hover:border-white/10 transition-all duration-500";
+  const sectionHeaderStyle = "flex items-center gap-3 mb-6 pb-4 border-b border-white/5";
+  const sectionIconBoxStyle = "p-2 bg-zinc-800/50 rounded-xl border border-white/5 text-zinc-400 group-hover:text-white group-hover:bg-zinc-800 transition-colors";
+  const sectionTitleStyle = "text-xs font-bold text-zinc-500 uppercase tracking-widest";
+  // --------------------------------------------
+
+  // Loading state updated to match dark theme
+  if (loading) {
+      return (
+          <div className="min-h-screen flex items-center justify-center">
+              {/* Menggunakan komponen LoadingSpinner jika tersedia, atau fallback manual */}
+              {typeof LoadingSpinner !== 'undefined' ? <LoadingSpinner /> : (
+                  <div className="flex flex-col items-center gap-3 text-zinc-400">
+                      <div className="w-8 h-8 border-2 border-white/10 border-t-white rounded-full animate-spin"></div>
+                      <p className="text-sm font-medium tracking-widest uppercase">Memuat Data...</p>
+                  </div>
+              )}
+          </div>
+      );
+  }
+
+  // No data state updated to dark theme
   if (!disposisi) {
     return (
-      <div className="min-h-screen flex items-center justify-center" >
-        <div className="text-center">
-          <FileText className="w-16 h-16 mx-auto mb-4 text-pink-400" />
-          <h3 className="text-lg font-bold mb-2">Data Tidak Ditemukan</h3>
-          <p className="mb-4" >Disposisi tidak ditemukan atau tidak dapat diakses langsung</p>
+      <div className="min-h-screen bg-black flex items-center justify-center text-white">
+        <div className={glassCardStyle + " text-center max-w-md mx-auto"}>
+          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
+             <FileText className="w-10 h-10 text-zinc-500" />
+          </div>
+          <h3 className="text-xl font-semibold text-white mb-3">Data Tidak Ditemukan</h3>
+          <p className="text-zinc-400 mb-8 leading-relaxed">Disposisi tidak ditemukan atau Anda tidak memiliki izin untuk mengaksesnya saat ini.</p>
           <button
-            onClick={() => navigate('/kabid')}
-            className="bg-black text-white px-4 py-2.5 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg border border-slate-200"
+            onClick={() => navigate('/sekretaris')}
+            className="px-6 py-3 bg-white text-black hover:bg-zinc-200 rounded-2xl font-bold transition-all shadow-lg shadow-white/5"
           >
-            Kembali ke Daftar
+            Kembali ke Dashboard
           </button>
         </div>
       </div>
@@ -348,26 +373,33 @@ const SekretarisDisposisiDetail = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="">
-        {/* Header Section */}
-        <DisposisiHeader
-          disposisi={disposisi}
-          onDownloadPDF={handleDownloadPDF}
-          downloadLoading={downloadLoading}
-          onAcceptDisposisi={handleAcceptDisposisi}
-          acceptLoading={acceptLoading}
-          acceptError={acceptError}
-          onShowForwardModal={() => setShowForwardModal(true)}
-          onShowFeedbackForm={() => setShowFeedbackForm(true)}
-          showForwardModal={showForwardModal}
-          showFeedbackForm={showFeedbackForm}
-          editingFeedbackId={editingFeedbackId}
-        />
+    // Ubah container utama menjadi tema gelap
+    <div className="min-h-screen text-zinc-100 font-sans selection:bg-white/20 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        {/* Header Section - Dibungkus agar sesuai dengan tema gelap jika komponen internalnya belum mendukung */}
+        <div className="relative">
+             {/* Background glow effect untuk header */}
+             <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-3xl blur-3xl opacity-50 -z-10" />
+             <DisposisiHeader
+              disposisi={disposisi}
+              onDownloadPDF={handleDownloadPDF}
+              downloadLoading={downloadLoading}
+              onAcceptDisposisi={handleAcceptDisposisi}
+              acceptLoading={acceptLoading}
+              acceptError={acceptError}
+              onShowForwardModal={() => setShowForwardModal(true)}
+              onShowFeedbackForm={() => setShowFeedbackForm(true)}
+              showForwardModal={showForwardModal}
+              showFeedbackForm={showFeedbackForm}
+              editingFeedbackId={editingFeedbackId}
+            />
+        </div>
+
 
         {disposisi && (
-          <div className="space-y-4">
-            {/* Forward Modal Component */}
+          <div className="space-y-8">
+            {/* Modals & Forms tetap ada secara logika */}
             <ForwardModal
               isOpen={showForwardModal}
               onClose={() => setShowForwardModal(false)}
@@ -375,58 +407,112 @@ const SekretarisDisposisiDetail = () => {
               onSuccess={handleForwardSuccess}
             />
 
-            {/* Form Feedback */}
-            <FeedbackForm
-              showFeedbackForm={showFeedbackForm}
-              setShowFeedbackForm={setShowFeedbackForm}
-              showForwardModal={showForwardModal}
-              feedbackData={feedbackData}
-              feedbackError={feedbackError}
-              feedbackLoading={feedbackLoading}
-              handleFeedbackChange={handleFeedbackChange}
-              handleFeedbackSubmit={handleFeedbackSubmit}
-              handleFileChange={handleFileChange}
-              editingFeedbackId={editingFeedbackId}
-            />
-
-            {/* Informasi Surat dan Disposisi */}
-            <div className="bg-gradient-to-bl from-gray-100 via-white to-gray-100 rounded-2xl shadow-md border-2 border-slate-200 p-2 md:p-6">
-              <DisposisiInfoCard
-                disposisi={disposisi}
-              />
-              {/* Content Sections */}
-              <DisposisiContentSection
-                disposisi={disposisi}
-                onImageClick={setSelectedImage}
-              />
+            {/* Form Feedback akan muncul di sini jika diaktifkan */}
+            <div className={`${showFeedbackForm ? 'animate-in fade-in slide-in-from-top-4 duration-300' : ''}`}>
+                <FeedbackForm
+                  showFeedbackForm={showFeedbackForm}
+                  setShowFeedbackForm={setShowFeedbackForm}
+                  showForwardModal={showForwardModal}
+                  feedbackData={feedbackData}
+                  feedbackError={feedbackError}
+                  feedbackLoading={feedbackLoading}
+                  handleFeedbackChange={handleFeedbackChange}
+                  handleFeedbackSubmit={handleFeedbackSubmit}
+                  handleFileChange={handleFileChange}
+                  editingFeedbackId={editingFeedbackId}
+                />
             </div>
 
-            {/* Feedback dari Bawahan */}
-            <FeedbackBawahan
-              disposisi={disposisi}
-              setSelectedImage={setSelectedImage}
-              subFeedbackError={subFeedbackError}
-              subFeedbackLoading={subFeedbackLoading}
-              subordinateFeedback={subordinateFeedback}
-            />
 
-            {/* Feedback yang Telah Dikirim */}
-            <MyFeedback
-              feedbackList={feedbackList}
-              editFeedbackData={editFeedbackData}
-              editingFeedbackId={editingFeedbackId}
-              editLoading={editLoading}
-              showFeedbackForm={showFeedbackForm}
-              showForwardModal={showForwardModal}
-              fetchFeedbackForEdit={fetchFeedbackForEdit}
-              feedbackError={feedbackError}
-              handleEditFeedbackChange={handleEditFeedbackChange}
-              handleEditFeedbackSubmit={handleEditFeedbackSubmit}
-              handleEditFileChange={handleEditFileChange}
-              handleRemoveExistingFile={handleRemoveExistingFile}
-              cancelEditFeedback={cancelEditFeedback}
-              setSelectedImage={setSelectedImage}
-            />
+            {/* === MAIN CONTENT CARD (Menggantikan gradient div yang lama) === */}
+            <div className={glassCardStyle}>
+                {/* Background Glow Effect Internal */}
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors duration-500 pointer-events-none" />
+
+              <div className="relative z-10 space-y-10">
+                  {/* Section 1: Informasi Surat */}
+                  <section>
+                      <div className={sectionHeaderStyle}>
+                          <div className={sectionIconBoxStyle}>
+                              <LayoutGrid className="w-4 h-4" />
+                          </div>
+                          <h3 className={sectionTitleStyle}>Detail & Metadata Surat</h3>
+                      </div>
+                      <div className="text-zinc-300">
+                        <DisposisiInfoCard disposisi={disposisi} />
+                      </div>
+                  </section>
+
+                  {/* Section 2: Isi Disposisi & Lampiran */}
+                  <section>
+                      <div className={sectionHeaderStyle}>
+                          <div className={sectionIconBoxStyle}>
+                              <FileText className="w-4 h-4" />
+                          </div>
+                          <h3 className={sectionTitleStyle}>Instruksi & Konten Disposisi</h3>
+                      </div>
+                      <div className="bg-black/20 rounded-2xl p-4 border border-white/5">
+                        <DisposisiContentSection
+                          disposisi={disposisi}
+                          onImageClick={setSelectedImage}
+                        />
+                      </div>
+                  </section>
+              </div>
+            </div>
+
+            {/* === Feedback dari Bawahan CARD === */}
+            {/* Dibungkus dalam card terpisah agar sesuai style baru karena aslinya di luar main card */}
+            {(disposisi.diteruskan_kepada_user_id) && (
+                <div className={glassCardStyle + " border-l-4 border-l-indigo-500/50"}>
+                   <div className={sectionHeaderStyle}>
+                          <div className={sectionIconBoxStyle + " !text-indigo-400 !bg-indigo-500/10"}>
+                              <Users className="w-4 h-4" />
+                          </div>
+                          <h3 className={sectionTitleStyle}>Respon / Feedback Bawahan</h3>
+                      </div>
+                  <div className="text-zinc-300">
+                    <FeedbackBawahan
+                      disposisi={disposisi}
+                      setSelectedImage={setSelectedImage}
+                      subFeedbackError={subFeedbackError}
+                      subFeedbackLoading={subFeedbackLoading}
+                      subordinateFeedback={subordinateFeedback}
+                    />
+                  </div>
+                </div>
+            )}
+
+
+            {/* === Feedback yang Telah Dikirim CARD === */}
+             {/* Dibungkus dalam card terpisah */}
+            <div className={glassCardStyle}>
+                   <div className={sectionHeaderStyle}>
+                          <div className={sectionIconBoxStyle}>
+                              <MessageSquare className="w-4 h-4" />
+                          </div>
+                          <h3 className={sectionTitleStyle}>Riwayat Feedback Anda</h3>
+                      </div>
+              <div className="text-zinc-300">
+                <MyFeedback
+                  feedbackList={feedbackList}
+                  editFeedbackData={editFeedbackData}
+                  editingFeedbackId={editingFeedbackId}
+                  editLoading={editLoading}
+                  showFeedbackForm={showFeedbackForm}
+                  showForwardModal={showForwardModal}
+                  fetchFeedbackForEdit={fetchFeedbackForEdit}
+                  feedbackError={feedbackError}
+                  handleEditFeedbackChange={handleEditFeedbackChange}
+                  handleEditFeedbackSubmit={handleEditFeedbackSubmit}
+                  handleEditFileChange={handleEditFileChange}
+                  handleRemoveExistingFile={handleRemoveExistingFile}
+                  cancelEditFeedback={cancelEditFeedback}
+                  setSelectedImage={setSelectedImage}
+                />
+              </div>
+            </div>
+
           </div>
         )}
       </div>

@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   FileText,
   Eye,
-  Calendar,
-  Building,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -15,13 +13,73 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  LayoutDashboard
+  LayoutGrid,
+  MoreVertical,
+  Calendar
 } from 'lucide-react';
 import { staffDisposisiService } from '../../services/staffDisposisiService';
-import Avatar from '../../assets/img/adminrobot.png';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/Ui/LoadingSpinner';
-import StatCard from '../../components/Ui/StatCard';
+
+// === UI COMPONENTS (ADAPTED FROM NEW DESIGN SYSTEM) ===
+
+// 1. New Stat Card (Bento Style)
+const BentoStatCard = ({ title, count, icon: Icon, subtitle, glowColor = "bg-white/5" }) => (
+  <div className="group relative bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 hover:border-white/10 transition-all duration-500 overflow-hidden">
+    <div className={`absolute -right-6 -top-6 w-24 h-24 ${glowColor} rounded-full blur-2xl group-hover:bg-white/10 transition-colors duration-500`} />
+    <div className="relative z-10 flex flex-col justify-between h-full">
+      <div className="flex justify-between items-start mb-4">
+        <div className="p-3 bg-zinc-800/50 rounded-2xl border border-white/5 text-zinc-400 group-hover:text-white group-hover:bg-zinc-800 transition-colors">
+          <Icon className="w-5 h-5" />
+        </div>
+      </div>
+      <div>
+        <h3 className="text-3xl font-semibold text-white tracking-tight mb-1">{count}</h3>
+        <p className="text-sm text-zinc-500 font-medium">{title}</p>
+        {subtitle && <p className="text-xs text-zinc-600 mt-2">{subtitle}</p>}
+      </div>
+    </div>
+  </div>
+);
+
+// 2. Styled Badges (Glassy Look)
+const StatusBadge = ({ status }) => {
+  const styles = {
+    'belum dibaca': { css: 'bg-red-500/10 text-red-400 border-red-500/20', icon: AlertCircle, label: 'Belum Dibaca' },
+    'dibaca': { css: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20', icon: Eye, label: 'Sudah Dibaca' },
+    'diproses': { css: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', icon: Clock, label: 'Diproses' },
+    'selesai': { css: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: CheckCircle, label: 'Selesai' }
+  };
+
+  const config = styles[status] || styles['belum dibaca'];
+  const Icon = config.icon;
+
+  return (
+    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${config.css} backdrop-blur-md`}>
+      <Icon className="w-3.5 h-3.5" />
+      <span className="text-[10px] font-bold uppercase tracking-wide">{config.label}</span>
+    </div>
+  );
+};
+
+const SifatBadge = ({ sifat }) => {
+  const getStyle = (s) => {
+    switch (s) {
+      case 'Sangat Segera': return 'bg-red-500/10 text-red-400 border-red-500/20';
+      case 'Segera': return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+      case 'Rahasia': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      default: return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+    }
+  };
+
+  return (
+    <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wider ${getStyle(sifat)}`}>
+      {sifat || '-'}
+    </span>
+  );
+};
+
+// === MAIN PAGE ===
 
 const StaffDashboard = () => {
   const navigate = useNavigate();
@@ -47,7 +105,7 @@ const StaffDashboard = () => {
 
   const { user } = useAuth();
 
-  // === LOGIKA ASLI — TIDAK DIUBAH SATU PUN ===
+  // === LOGIC START (TIDAK DIUBAH) ===
   const applyFiltersAndPagination = () => {
     let filteredData = allDisposisi;
 
@@ -79,14 +137,12 @@ const StaffDashboard = () => {
       setError(null);
 
       const response = await staffDisposisiService.getDaftarDisposisi({});
-
       let allData = [];
       if (response && Array.isArray(response.data)) {
         allData = response.data;
       } else if (response && Array.isArray(response)) {
         allData = response;
       } else {
-        console.warn('Struktur data tidak dikenali:', response);
         allData = [];
       }
 
@@ -99,12 +155,7 @@ const StaffDashboard = () => {
       ).length;
       const selesai = allData.filter(item => item.status_dari_bawahan === 'selesai').length;
 
-      setStats({
-        total,
-        belumDibaca,
-        diproses,
-        selesai
-      });
+      setStats({ total, belumDibaca, diproses, selesai });
 
     } catch (err) {
       setError(err.message);
@@ -122,11 +173,6 @@ const StaffDashboard = () => {
     setPagination(prev => ({ ...prev, offset: 0 }));
   };
 
-  const handleSearchChange = (newSearch) => {
-    setSearchInstansi(newSearch);
-    setPagination(prev => ({ ...prev, offset: 0 }));
-  };
-
   const handleSearchInput = (value) => {
     setSearchInput(value);
     setSearchInstansi(value);
@@ -139,7 +185,6 @@ const StaffDashboard = () => {
     setPagination(prev => ({ ...prev, offset: 0 }));
   };
 
-  // Fungsi navigasi detail — hanya di sini!
   const handleViewDetail = (id) => {
     navigate(`/staff/disposisi/${id}`);
   };
@@ -153,6 +198,7 @@ const StaffDashboard = () => {
       applyFiltersAndPagination();
     }
   }, [filterStatus, searchInstansi, pagination.offset, allDisposisi]);
+  // === LOGIC END ===
 
   if (loading) {
     return (
@@ -164,336 +210,241 @@ const StaffDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md mx-auto shadow-sm">
-            <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-2" />
-            <h3 className="text-xl font-bold text-gray-900">Terjadi Kesalahan</h3>
-            <p className="text-gray-600 mb-2">{error}</p>
-            <button
-              onClick={fetchDisposisi}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-full font-medium transition shadow"
-            >
-              Coba Lagi
-            </button>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-zinc-900 border border-red-500/20 rounded-3xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+            <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
+          <h3 className="text-xl font-light text-white mb-2">Terjadi Kesalahan</h3>
+          <p className="text-zinc-500 text-sm mb-6">{error}</p>
+          <button
+            onClick={fetchDisposisi}
+            className="w-full px-4 py-3 bg-white text-black hover:bg-zinc-200 rounded-2xl font-bold transition-all"
+          >
+            Coba Lagi
+          </button>
         </div>
       </div>
     );
   }
 
-  // ✅ STATUS BADGE — DISAMAKAN DENGAN GAYA SURAT MASUK
-  const getStatusBadge = (status_dari_bawahan) => {
-    const statusConfig = {
-      'belum dibaca': {
-        color: 'bg-green-100 text-green-800',
-        icon: AlertCircle,
-        text: 'Belum Dibaca'
-      },
-      'dibaca': {
-        color: 'bg-yellow-100 text-yellow-800',
-        icon: AlertCircle,
-        text: 'Sudah Dibaca'
-      },
-      'diproses': {
-        color: 'bg-yellow-100 text-yellow-800',
-        icon: Clock,
-        text: 'Dalam Proses'
-      },
-      'selesai': {
-        color: 'bg-gray-100 text-gray-800',
-        icon: CheckCircle,
-        text: 'Selesai'
-      }
-    };
-
-    const config = statusConfig[status_dari_bawahan] || statusConfig['belum dibaca'];
-    const IconComponent = config.icon;
-
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        <IconComponent className="w-3 h-3 mr-1" />
-        {config.text}
-      </span>
-    );
-  };
-
-  // ✅ SIFAT BADGE — DISAMAKAN DENGAN GAYA SURAT MASUK
-  const SifatBadge = ({ sifat }) => {
-    const getSifatColor = (sifat) => {
-      switch (sifat) {
-        case 'Sangat Segera': return 'bg-red-100 text-red-800';
-        case 'Segera': return 'bg-orange-100 text-orange-800';
-        case 'Rahasia': return 'bg-purple-100 text-purple-800';
-        case 'Biasa': return 'bg-blue-100 text-blue-800';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    };
-
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSifatColor(sifat)}`}>
-        {sifat || '-'}
-      </span>
-    );
-  };
-
   return (
-    <div className="min-h-screen">
-      <main className="p-4">
+    <div className="min-h-screen text-white font-sans selection:bg-white/20 pb-20">
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8">
 
-        <div className="relative bg-gradient-to-bl from-teal-500 via-teal-300 to-teal-400 rounded-2xl p-5 border border-slate-200 shadow-lg mb-2">
-          <div className='flex justify-between items-center gap-x-5'>
-            <div className='space-y-2'>
-              <h1 className="text-2xl font-bold text-white">Dashboard Staff</h1>
-              <div className='flex items-center gap-x-2'>
-                <UserCircle2 className='w-5 h-5 text-white' />
-                <p className='text-sm font-medium text-white'>{user?.name}</p>
+        {/* 1. Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/5 rounded-lg border border-white/5 backdrop-blur-sm">
+                <UserCircle2 className="w-5 h-5 text-zinc-400" />
               </div>
-              <div className='flex items-center gap-x-2'>
-                <Building2 className='w-5 h-5 text-white' />
-                <p className='text-sm font-medium text-white'>{user?.jabatan}</p>
-              </div>
+              <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">
+                Staff Dashboard &bull; {user?.name}
+              </p>
             </div>
-            <LayoutDashboard className='text-white w-20 h-20' />
+            <h1 className="text-4xl font-light tracking-tight text-white">
+              Disposisi <span className="font-semibold text-zinc-500">Masuk</span>
+            </h1>
+            <div className="flex items-center gap-2 text-zinc-500">
+              <Building2 className="w-4 h-4" />
+              <span className="text-sm">{user?.jabatan || 'Staff Pegawai'}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-zinc-500 bg-zinc-900/50 px-4 py-2 rounded-full border border-white/5">
+            <LayoutGrid className="w-3 h-3" />
+            <span>Total: {stats.total} Dokumen</span>
           </div>
         </div>
 
-        {/* ✅ Stat Cards — DISAMAKAN DENGAN GAYA SURAT MASUK */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
-          <StatCard
+        {/* 2. Stats Grid (Bento Style) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <BentoStatCard
             title="Total Disposisi"
             count={stats.total}
             icon={FileText}
-            bgColor="bg-white"
-            textColor="text-black"
-            iconBg="bg-teal-400"
-            borderColor="border-slate-200"
-            iconColor="text-white"
+            subtitle="Semua surat masuk"
           />
-          <StatCard
+          <BentoStatCard
             title="Belum Dibaca"
             count={stats.belumDibaca}
             icon={AlertCircle}
-            bgColor="bg-white"
-            textColor="text-black"
-            iconBg="bg-green-100"
-            borderColor="border-slate-200"
-            iconColor="text-green-800"
+            subtitle="Perlu perhatian segera"
+            glowColor="bg-red-500/20"
           />
-          <StatCard
-            title="Diproses"
+          <BentoStatCard
+            title="Sedang Diproses"
             count={stats.diproses}
             icon={Clock}
-            bgColor="bg-white"
-            textColor="text-black"
-            iconBg="bg-yellow-100"
-            borderColor="border-slate-200"
-            iconColor="text-yellow-800"
+            subtitle="Dalam pengerjaan"
+            glowColor="bg-yellow-500/20"
           />
-          <StatCard
+          <BentoStatCard
             title="Selesai"
             count={stats.selesai}
             icon={CheckCircle}
-            bgColor="bg-black"
-            textColor="text-white"
-            iconBg="bg-white"
-            borderColor="border-slate-200"
-            iconColor="text-teal-400"
+            subtitle="Telah ditindaklanjuti"
+            glowColor="bg-emerald-500/20"
           />
         </div>
 
-        {/* ✅ Search and Filter Section — DISAMAKAN DENGAN GAYA SURAT MASUK */}
-        <div className="mb-2 p-4 bg-white rounded-2xl shadow-sm border border-slate-200">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        {/* 3. Filter & Search Bar */}
+        <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6">
+          <div className="flex flex-col lg:flex-row gap-4 items-center">
 
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            {/* Search */}
+            <div className="relative flex-1 w-full group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-white transition-colors" />
               <input
                 type="text"
-                placeholder="Cari berdasarkan instansi..."
+                placeholder="Cari asal instansi..."
                 value={searchInput}
                 onChange={(e) => handleSearchInput(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 text-sm rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full bg-black/20 border border-white/5 rounded-2xl py-3 pl-10 pr-10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/10 focus:bg-black/40 transition-all"
               />
               {searchInput && (
                 <button
                   onClick={clearSearch}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 hover:bg-gray-50 rounded-r-full transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
                 >
-                  <X className="h-5 w-5 text-gray-500" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
             </div>
 
-            {/* Filter Status */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-600" />
+            {/* Filter Dropdown */}
+            <div className="relative min-w-[200px] w-full lg:w-auto">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                <Filter className="h-4 w-4" />
+              </div>
               <select
                 value={filterStatus}
                 onChange={(e) => handleFilterChange(e.target.value)}
-                className="px-4 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full bg-black/20 border border-white/5 rounded-2xl py-3 pl-10 pr-8 text-sm text-zinc-300 appearance-none focus:outline-none focus:border-white/10 cursor-pointer hover:bg-black/30 transition-colors"
               >
                 <option value="">Semua Status</option>
                 <option value="belum dibaca">Belum Dibaca</option>
                 <option value="diproses">Diproses</option>
                 <option value="selesai">Selesai</option>
               </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="w-1.5 h-1.5 border-r border-b border-zinc-500 rotate-45 transform -translate-y-1"></div>
+              </div>
             </div>
 
             {/* Reset Button */}
-            <button
-              onClick={() => {
-                setFilterStatus('');
-                setSearchInstansi('');
-                setSearchInput('');
-                setPagination(prev => ({ ...prev, offset: 0 }));
-              }}
-              className="px-4 py-2.5 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 font-medium transition flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" /> Reset
-            </button>
-
+            {(filterStatus || searchInput) && (
+              <button
+                onClick={() => {
+                  setFilterStatus('');
+                  clearSearch();
+                }}
+                className="px-6 py-3 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-2xl text-sm font-medium transition-colors border border-white/5"
+              >
+                Reset Filter
+              </button>
+            )}
           </div>
+        </div>
 
-          {/* Active Filters Display */}
-          {(filterStatus || searchInstansi) && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-sm font-medium text-gray-700">Filter Aktif:</span>
-                {filterStatus && (
-                  <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full text-sm font-medium">
-                    <span>Status: {filterStatus}</span>
-                    <button onClick={() => handleFilterChange('')} className="hover:text-gray-700">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-                {searchInstansi && (
-                  <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full text-sm font-medium">
-                    <span>Instansi: "{searchInstansi}"</span>
-                    <button onClick={clearSearch} className="hover:text-gray-700">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
+        {/* 4. Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {disposisiList.length === 0 ? (
+            <div className="col-span-full py-20 text-center text-zinc-500 bg-zinc-900/30 rounded-3xl border border-white/5 border-dashed">
+              <div className="flex flex-col items-center justify-center opacity-50">
+                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                  <FileText className="w-8 h-8" />
+                </div>
+                <p>Tidak ada data disposisi ditemukan</p>
               </div>
             </div>
+          ) : (
+            disposisiList.map((item) => (
+              <div
+                key={item.id}
+                className="group flex flex-col justify-between bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 hover:bg-zinc-900/50 hover:border-white/10 transition-all duration-300"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          {item.nomor_surat || 'No Reg'}
+                        </span>
+                        <span className="w-1 h-1 rounded-full bg-zinc-700"></span>
+                        <span className="text-[10px] text-zinc-500">
+                          {item.tanggal_surat}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-medium text-white group-hover:text-indigo-200 transition-colors line-clamp-2">
+                        {item.perihal || 'Tanpa Perihal'}
+                      </h3>
+                      <div className="flex items-center gap-2 text-sm text-zinc-400">
+                        <Building2 className="w-3.5 h-3.5" />
+                        {item.asal_instansi || '-'}
+                      </div>
+                    </div>
+                    <SifatBadge sifat={item.sifat} />
+                  </div>
+
+                  {/* Metadata Grid */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Agenda</p>
+                      <p className="text-sm text-white font-mono">{item.nomor_agenda || '-'}</p>
+                    </div>
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5 flex items-center justify-between">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold">Status</p>
+                      <StatusBadge status={item.status_dari_bawahan} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                  <div className="flex -space-x-2">
+                    {/* Decorative avatars placeholders if needed, or just standard text */}
+                    <div className="h-8 w-8 rounded-full bg-zinc-800 border-2 border-zinc-900 flex items-center justify-center text-[10px] text-zinc-500">
+                      <UserCircle2 className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleViewDetail(item.id)}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-xl text-sm font-bold transition-all shadow-lg shadow-white/5"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Detail</span>
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
 
-        {/* ✅ Disposisi List — CARD LAYOUT (SEPERTI SURAT MASUK) */}
-        {disposisiList.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-2">
-              <FileText className="w-10 h-10 text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              {searchInstansi || filterStatus ? 'Tidak Ada Hasil' : 'Tidak Ada Disposisi'}
-            </h3>
-            <p className="text-gray-500 max-w-md mx-auto">
-              {searchInstansi || filterStatus
-                ? 'Tidak ditemukan disposisi yang sesuai dengan kriteria pencarian'
-                : 'Belum ada disposisi yang tersedia untuk saat ini'
-              }
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-2">
-            {disposisiList.map((item) => (
-              <article
-                key={item.id}
-                className="group relative bg-white space-y-2 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-200"
-              >
-                {/* Header */}
-                <div className="border-b border-gray-50/50 pb-3">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900">
-                        {item.perihal || 'Tanpa Perihal'}
-                      </h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                        <span className="font-medium text-gray-700">Nomor Surat:</span> {item.nomor_surat || '-'} •{' '}
-                        <span className="font-medium text-gray-700">Dari:</span> {item.asal_instansi || '-'}
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center px-4 py-2 bg-indigo-50 text-indigo-800 rounded-full text-sm font-medium shadow-sm">
-                      {item.tanggal_surat || '-'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Metadata Grid */}
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mt-0.5">
-                        <Building className="w-5 h-5 text-teal-400" />
-                      </div>
-                      <div>
-                        <p className="text-gray-500 font-medium">Nomor Agenda</p>
-                        <p className="text-gray-800">{item.nomor_agenda || '-'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mt-0.5">
-                        <AlertCircle className="w-5 h-5 text-teal-400" />
-                      </div>
-                      <div>
-                        <p className="text-gray-500 font-medium">Sifat</p>
-                        <SifatBadge sifat={item.sifat} />
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <div>
-                        <p className="text-gray-500 font-medium">Status</p>
-                        {getStatusBadge(item.status_dari_bawahan)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tombol Aksi */}
-                <div className="space-y-2 pt-3 border-t border-gray-50/50">
-                  <button
-                    onClick={() => handleViewDetail(item.id)}
-                    className="inline-flex w-full justify-center items-center gap-2 px-4 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-full text-sm font-medium shadow transition-colors duration-200"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Lihat Detail
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-
-        {/* ✅ Pagination Component — DISAMAKAN DENGAN GAYA SURAT MASUK */}
+        {/* 5. Pagination */}
         {disposisiList.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mt-6">
-            <div className="text-sm text-gray-700">
-              Menampilkan {pagination.offset + 1} - {Math.min(pagination.offset + pagination.limit, pagination.total)} dari {pagination.total} data
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-white/5 text-zinc-500 text-sm">
+            <div>
+              Menampilkan <span className="text-white font-medium">{pagination.offset + 1}</span> - <span className="text-white font-medium">{Math.min(pagination.offset + pagination.limit, pagination.total)}</span> dari {pagination.total} data
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handlePageChange(Math.max(0, pagination.offset - pagination.limit))}
                 disabled={pagination.offset === 0}
-                className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="p-2.5 rounded-xl border border-white/5 hover:bg-white/5 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
 
-              <span className="px-3 py-1 text-gray-800 font-medium bg-gray-100 rounded-full border border-gray-300">
+              <div className="px-4 py-2 rounded-xl bg-zinc-900 border border-white/5 text-xs font-bold uppercase tracking-wider text-zinc-300">
                 Halaman {Math.floor(pagination.offset / pagination.limit) + 1}
-              </span>
+              </div>
 
               <button
                 onClick={() => handlePageChange(pagination.offset + pagination.limit)}
                 disabled={pagination.offset + pagination.limit >= pagination.total}
-                className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="p-2.5 rounded-xl border border-white/5 hover:bg-white/5 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -501,7 +452,7 @@ const StaffDashboard = () => {
           </div>
         )}
 
-      </main>
+      </div>
     </div>
   );
 };

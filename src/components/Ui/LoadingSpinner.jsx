@@ -8,7 +8,7 @@ const LoadingSpinner = ({ size = 'default', text = 'Memuat...' }) => {
   };
   return (
     <div className="flex items-center justify-center space-x-2">
-      <Loader className={`animate-spin ${sizeClasses[size]} text-black`} />
+      <Loader className={`animate-spin ${sizeClasses[size]} text-white`} />
       {text && <span className="text-[#6b7280]">{text}</span>}
     </div>
   );

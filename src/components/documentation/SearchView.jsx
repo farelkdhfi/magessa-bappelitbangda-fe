@@ -1,4 +1,3 @@
-// src/components/SearchView.js
 import React from 'react';
 import { Search, Camera } from 'lucide-react';
 import PostCard from './PostCard';
@@ -9,7 +8,6 @@ const SearchView = ({
     searchResults,
     searchLoading,
     setFeedFilters,
-    // Props needed by PostCard
     user,
     handleLike,
     openPostDetail,
@@ -23,29 +21,43 @@ const SearchView = ({
     setCurrentPage,
     loadUserProfile
 }) => (
-    <div className="space-y-4 max-w-xl mx-auto">
-        <div className="">
-            <h2 className="text-sm font-bold text-gray-900 mb-2 flex items-center">
-                <Search className="w-6 h-6 mr-2 text-teal-500" />
-                Hasil Pencarian
-            </h2>
-            <p className="text-gray-600 text-xs">
-                Menampilkan hasil untuk: "<span className="font-semibold">{feedFilters.search}</span>"
-            </p>
+    <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
+        
+        {/* Search Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/5">
+            <div className="space-y-1">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Search className="w-5 h-5 text-emerald-500" />
+                    Hasil Pencarian
+                </h2>
+                <p className="text-zinc-400 text-sm">
+                    Menampilkan hasil untuk: <span className="font-bold text-white">"{feedFilters.search}"</span>
+                </p>
+            </div>
+            {!searchLoading && searchResults.length > 0 && (
+                <span className="px-3 py-1 bg-zinc-900 border border-white/10 rounded-full text-xs font-medium text-zinc-400">
+                    {searchResults.length} hasil ditemukan
+                </span>
+            )}
         </div>
+
+        {/* Content */}
         {searchLoading && searchResults.length === 0 ? (
-            <div className="text-center py-12">
-                <LoadingSpinner text='mencari' />
+            <div className="flex justify-center py-20">
+                <LoadingSpinner text='Mencari...' />
             </div>
         ) : searchResults.length === 0 ? (
-            <div className="text-center py-12">
-                <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Tidak ada hasil</h3>
-                <p className="text-gray-500">Coba kata kunci yang berbeda</p>
+            /* Empty State */
+            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-3xl bg-zinc-900/20">
+                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-white/5">
+                    <Search className="w-8 h-8 text-zinc-600" />
+                </div>
+                <h3 className="text-white font-medium mb-1">Tidak ada hasil</h3>
+                <p className="text-zinc-500 text-sm">Coba kata kunci yang berbeda atau periksa ejaan Anda.</p>
             </div>
         ) : (
             <>
-                <div>
+                <div className="grid grid-cols-1 gap-6">
                     {searchResults.map(post => (
                         <PostCard
                             key={post.id}
@@ -65,11 +77,12 @@ const SearchView = ({
                         />
                     ))}
                 </div>
+                
                 {!searchLoading && (
-                    <div className="text-center mt-8">
+                    <div className="text-center mt-10">
                         <button
                             onClick={() => setFeedFilters(prev => ({ ...prev, page: prev.page + 1 }))}
-                            className="bg-white border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50"
+                            className="px-8 py-3 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all text-sm font-medium"
                         >
                             Muat Lebih Banyak
                         </button>

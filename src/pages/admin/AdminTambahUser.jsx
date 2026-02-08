@@ -8,14 +8,19 @@ import {
   Plus,
   Check,
   Loader2,
-  CheckCircle,
-  Loader,
-  Pencil, // Icon untuk mode edit/custom
-  ListFilter // Icon untuk kembali ke mode list
+  CheckCircle2,
+  Pencil, 
+  ListFilter,
+  UserPlus,
+  Briefcase,
+  LayoutGrid,
+  ChevronRight
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
-import Img from '../../assets/img/adminrobot.png'
+// Import Three.js dependencies
+import { Canvas } from '@react-three/fiber';
+import { Sparkles } from '@react-three/drei';
 
 function AdminTambahUser() {
   const navigate = useNavigate();
@@ -43,7 +48,6 @@ function AdminTambahUser() {
 
   const openModal = (role) => {
     setSelectedRole(role);
-    // Reset form dan mode custom saat modal dibuka
     setForm({
       name: '',
       email: '',
@@ -74,16 +78,14 @@ function AdminTambahUser() {
     setIsCustomJabatan(false);
   };
 
-  // Toggle untuk Bidang (Select <-> Input)
   const toggleCustomBidang = () => {
     setIsCustomBidang(!isCustomBidang);
-    setForm(prev => ({ ...prev, bidang: '' })); // Reset nilai saat ganti mode
+    setForm(prev => ({ ...prev, bidang: '' }));
   };
 
-  // Toggle untuk Jabatan (Select <-> Input)
   const toggleCustomJabatan = () => {
     setIsCustomJabatan(!isCustomJabatan);
-    setForm(prev => ({ ...prev, jabatan: '' })); // Reset nilai saat ganti mode
+    setForm(prev => ({ ...prev, jabatan: '' }));
   };
 
   const handleSubmit = async (e) => {
@@ -107,374 +109,334 @@ function AdminTambahUser() {
       }
     } catch (err) {
       console.error('Error creating user:', err);
-
-      if (err.response) {
-        const errorMessage = err.response?.data?.error ||
-          err.response?.data?.message ||
-          `Server error: ${err.response.status}`;
-        toast.error(errorMessage);
-      } else if (err.request) {
-        toast.error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
-      } else {
-        toast.error('Terjadi kesalahan pada aplikasi: ' + err.message);
-      }
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Gagal membuat user';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const getRoleOptions = () => {
+    // Data dummy disederhanakan untuk UI
     switch (selectedRole) {
-      case 'kepala':
-        return {
-          bidang: ['Pimpinan'],
-          jabatan: ['Kepala Bepelitbangda']
+      case 'kepala': return { bidang: ['Pimpinan'], jabatan: ['Kepala Bepelitbangda'] };
+      case 'sekretaris': return { bidang: ['Sekretariat'], jabatan: ['Sekretaris'] };
+      case 'user': return {
+          bidang: ['Sekretariat', 'Pendanaan, Pengendalian, dan Evaluasi', 'Pemerintahan dan Pengembangan Manusia', 'Perekonomian, Infrastruktur, dan Kewilayahan', 'Penelitian dan Pengembangan'],
+          jabatan: ['Kasubag Umum', 'Kasubag Keuangan', 'Kabid PPE', 'Kabid PPM', 'Kabid PIK', 'Kabid Litbang']
         };
-      case 'sekretaris':
-        return {
-          bidang: ['Sekretariat'],
-          jabatan: ['Sekretaris']
-        };
-      case 'user':
-        return {
-          bidang: [
-            'Sekretariat',
-            'Pendanaan, Pengendalian, dan Evaluasi',
-            'Pemerintahan dan Pengembangan Manusia',
-            'Perekonomian, Infrastruktur, dan Kewilayahan',
-            'Penelitian dan Pengembangan'
-          ],
-          jabatan: [
-            'Kasubag Umum dan Kepegawaian',
-            'Kasubag Keuangan',
-            'Kabid Pendanaan, Pengendalian, dan Evaluasi',
-            'Kabid Pemerintahan dan Pengembangan Manusia',
-            'Kabid Perekonomian, Infrastruktur, dan Kewilayahan',
-            'Kabid Penelitian dan Pengembangan'
-          ]
-        };
-      case 'staff':
-        return {
-          bidang: [
-            'Sekretariat',
-            'Pendanaan, Pengendalian, dan Evaluasi',
-            'Pemerintahan dan Pengembangan Manusia',
-            'Perekonomian, Infrastruktur, dan Kewilayahan',
-            'Penelitian dan Pengembangan'
-          ],
+      case 'staff': return {
+          bidang: ['Sekretariat', 'Pendanaan, Pengendalian, dan Evaluasi', 'Pemerintahan dan Pengembangan Manusia', 'Perekonomian, Infrastruktur, dan Kewilayahan', 'Penelitian dan Pengembangan'],
           jabatan: []
         };
-      default:
-        return { bidang: [], jabatan: [] };
-    }
-  };
-
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case 'kepala':
-        return <Shield className="w-6 h-6 text-teal-400" />;
-      case 'sekretaris':
-        return <Shield className="w-6 h-6 text-teal-400" />;
-      case 'user':
-        return <Users className="w-6 h-6 text-teal-400" />;
-      case 'staff':
-        return <User className="w-6 h-6 text-teal-400" />;
-      default:
-        return <User className="w-6 h-6 text-teal-400" />;
-    }
-  };
-
-  const getRoleLabel = (role) => {
-    switch (role) {
-      case 'kepala': return 'Kepala';
-      case 'sekretaris': return 'Sekretaris';
-      case 'user': return 'Kabid';
-      case 'staff': return 'Staff';
-      default: return 'User';
-    }
-  };
-
-  const getRoleDescription = (role) => {
-    switch (role) {
-      case 'kepala': return 'Mengelola administrasi dan koordinasi';
-      case 'sekretaris': return 'Mengelola administrasi dan koordinasi';
-      case 'user': return 'Kepala bidang dengan akses penuh';
-      case 'staff': return 'Staff operasional di berbagai bidang';
-      default: return '';
+      default: return { bidang: [], jabatan: [] };
     }
   };
 
   const roleOptions = getRoleOptions();
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-6xl w-full m-auto">
+    <div className="min-h-screen text-white font-sans selection:bg-white/20 pb-20">
+      <div className="max-w-6xl w-full mx-auto px-6 pt-12">
 
-        <div className="flex flex-col lg:flex-row gap-8 p-8 bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-200">
-          <div className="flex-1 bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-200">
-                <User className="w-6 h-6 text-teal-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-[#000000] mb-2">Staff</h3>
-                <p className="text-[#6b7280] text-sm mb-4">Staff operasional di berbagai bidang</p>
-                <div className="text-xs text-[#6b7280] mb-4">
-                  <div className="font-semibold mb-1">Bidang:</div>
-                  <div>• Semua bidang tersedia</div>
-                  <div>• Jabatan dapat disesuaikan</div>
+        {/* Header Section */}
+        <div className="mb-12 space-y-3">
+          <div className='flex gap-1 items-center'>
+
+          <div className="p-2 bg-white/5 w-fit rounded-lg border border-white/5 backdrop-blur-sm">
+              <UserPlus className="w-5 h-5 text-zinc-400" />
+            </div>
+            <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">
+              Tambahkan anggota baru
+            </p>
+          </div>
+            <h1 className="text-4xl font-light tracking-tight text-white mb-2">
+                Registrasi <span className="font-semibold text-zinc-400">Pengguna Baru</span>
+            </h1>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column: Action Card */}
+          <div className="lg:col-span-2">
+             <div className="group relative bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-[32px] p-8 hover:border-white/10 transition-all duration-500 overflow-hidden h-full flex flex-col justify-between">
+                
+                {/* Background Glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-20 -mt-20 pointer-events-none group-hover:bg-white/10 transition-colors duration-500"></div>
+
+                <div>
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="p-4 bg-zinc-800 rounded-2xl border border-white/5 shadow-inner">
+                            <UserPlus className="w-8 h-8 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-semibold text-white">Buat Akun Staff</h3>
+                            <p className="text-zinc-500 text-sm">Akses standar operasional</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 mb-8">
+                        <div className="flex items-start gap-3 p-4 bg-black/20 rounded-2xl border border-white/5">
+                            <Briefcase className="w-5 h-5 text-zinc-400 mt-0.5" />
+                            <div>
+                                <p className="text-sm font-medium text-white">Fleksibilitas Jabatan</p>
+                                <p className="text-xs text-zinc-500 mt-1">Dapat ditempatkan di semua bidang dengan input jabatan manual.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3 p-4 bg-black/20 rounded-2xl border border-white/5">
+                             <LayoutGrid className="w-5 h-5 text-zinc-400 mt-0.5" />
+                             <div>
+                                <p className="text-sm font-medium text-white">Akses Modul</p>
+                                <p className="text-xs text-zinc-500 mt-1">Disposisi masuk, arsip surat, dan dashboard personal.</p>
+                             </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <button
-                onClick={() => openModal('staff')}
-                className="flex items-center gap-x-2 justify-center w-full py-3 px-6 font-semibold border border-[#e5e7eb] cursor-pointer transition-all duration-200 bg-black text-white rounded-2xl hover:opacity-90 hover:-translate-y-0.5 shadow-md"
-              >
-                <Plus className='w-4 h-4' />
-                Buat Akun Staff
-              </button>
+
+                <button
+                  onClick={() => openModal('staff')}
+                  className="w-full group/btn relative flex items-center justify-center gap-3 py-4 px-6 bg-white text-black rounded-2xl font-bold transition-all hover:bg-zinc-200 hover:scale-[1.01] active:scale-[0.99] shadow-xl shadow-white/5"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Mulai Registrasi</span>
+                  <ChevronRight className="w-4 h-4 opacity-0 -ml-2 group-hover/btn:opacity-100 group-hover/btn:ml-0 transition-all" />
+                </button>
+             </div>
+          </div>
+
+          {/* Right Column: ThreeJS Sparkles Illustration */}
+          <div className="lg:col-span-1 flex items-center justify-center relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10 lg:hidden"></div>
+            <div className="relative w-full h-full min-h-[300px] bg-zinc-900/30 border border-white/5 rounded-[32px] overflow-hidden group">
+                {/* Static Background Radial Glow */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-800/30 via-black to-black pointer-events-none"></div>
+                
+                {/* 3D Canvas */}
+                <div className="absolute inset-0 z-0">
+                    <Canvas camera={{ position: [0, 0, 1] }}>
+                        <Sparkles 
+                            count={150} 
+                            scale={1.8} 
+                            size={3} 
+                            speed={0.4} 
+                            opacity={0.6} 
+                            color="#ffffff"
+                        />
+                    </Canvas>
+                </div>
+                
+                {/* Optional: Subtle Overlay text or simple empty decorative element */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <div className="w-32 h-32 bg-white/5 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+                </div>
             </div>
           </div>
 
-          <div className="flex-shrink-0 w-full lg:w-1/3 flex justify-center">
-            <img src={Img} alt="Admin Robot" className="h-64 object-contain" />
-          </div>
         </div>
 
+        {/* MODAL */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-200">
-                    {getRoleIcon(selectedRole)}
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+             {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300" onClick={closeModal} />
+            
+            <div className="relative bg-zinc-950 border border-white/10 rounded-3xl shadow-2xl shadow-black/50 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+              
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-white/5 bg-zinc-900/50">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 bg-zinc-800 rounded-xl border border-white/5 text-white">
+                     <UserPlus className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-[#000000]">
-                      Buat Akun {getRoleLabel(selectedRole)}
+                    <h2 className="text-lg font-bold text-white tracking-tight">
+                      Registrasi {selectedRole === 'staff' ? 'Staff' : 'User'}
                     </h2>
-                    <p className="text-sm font-medium text-[#6b7280]">{getRoleDescription(selectedRole)}</p>
+                    <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">
+                        Create New Account
+                    </p>
                   </div>
                 </div>
                 <button
                   onClick={closeModal}
-                  disabled={loading}
-                  className="p-2 hover:bg-gray-50 rounded-xl transition-colors duration-200 disabled:cursor-not-allowed border border-gray-200"
+                  className="p-2 text-zinc-500 hover:text-white hover:bg-white/10 rounded-full transition-colors"
                 >
-                  <X className="w-5 h-5 text-[#000000]" aria-hidden="true" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="p-6">
+              {/* Modal Body (Scrollable) */}
+              <div className="p-8 overflow-y-auto custom-scrollbar">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  
+                  {/* Success Banner */}
                   {success && (
-                    <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" aria-hidden="true" />
-                      <span>Akun berhasil dibuat! Mengalihkan ke daftar user...</span>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                      <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                      <span className="font-medium">Akun berhasil dibuat! Mengalihkan...</span>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label htmlFor="name" className="block text-sm font-semibold text-[#000000]">
-                        Nama Lengkap
-                      </label>
-                      <input
-                        id="name"
-                        type="text"
-                        name="name"
-                        placeholder="Masukkan nama lengkap"
-                        value={form.name}
-                        onChange={handleChange}
-                        required
-                        disabled={loading || success}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] placeholder-[#6b7280] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="block text-sm font-semibold text-[#000000]">
-                        Email
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        name="email"
-                        placeholder="contoh@email.com"
-                        value={form.email}
-                        onChange={handleChange}
-                        required
-                        disabled={loading || success}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] placeholder-[#6b7280] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="password" className="block text-sm font-semibold text-[#000000]">
-                      Password
-                    </label>
-                    <input
-                      id="password"
-                      type="password"
-                      name="password"
-                      placeholder="Masukkan password"
-                      value={form.password}
-                      onChange={handleChange}
-                      required
-                      disabled={loading || success}
-                      className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] placeholder-[#6b7280] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* --- BAGIAN BIDANG --- */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <label htmlFor="bidang" className="block text-sm font-semibold text-[#000000]">
-                          Bidang
-                        </label>
-                        {/* Tombol Toggle Custom Bidang */}
-                        <button
-                          type="button"
-                          onClick={toggleCustomBidang}
-                          className="text-xs flex items-center gap-1 text-teal-600 hover:text-teal-800 transition-colors"
-                        >
-                          {isCustomBidang ? (
-                            <>
-                              <ListFilter className="w-3 h-3" /> Pilih dari List
-                            </>
-                          ) : (
-                            <>
-                              <Pencil className="w-3 h-3" /> Input Manual
-                            </>
-                          )}
-                        </button>
+                  {/* Account Info Group */}
+                  <div className="space-y-4">
+                      <p className="text-xs font-bold text-zinc-600 uppercase tracking-widest border-b border-white/5 pb-2 mb-4">Informasi Akun</p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
+                            <input
+                                name="name"
+                                type="text"
+                                placeholder="Cth: Ahmad Fulan"
+                                value={form.name}
+                                onChange={handleChange}
+                                required
+                                disabled={loading || success}
+                                className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:border-white/30 text-white placeholder-zinc-600 transition-all text-sm"
+                            />
+                         </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Email</label>
+                            <input
+                                name="email"
+                                type="email"
+                                placeholder="email@instansi.go.id"
+                                value={form.email}
+                                onChange={handleChange}
+                                required
+                                disabled={loading || success}
+                                className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:border-white/30 text-white placeholder-zinc-600 transition-all text-sm"
+                            />
+                         </div>
                       </div>
 
-                      {isCustomBidang ? (
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Password</label>
                          <input
-                         id="bidang-input"
-                         type="text"
-                         name="bidang"
-                         placeholder="Masukkan nama bidang kustom"
-                         value={form.bidang}
-                         onChange={handleChange}
-                         required
-                         disabled={loading || success}
-                         className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] placeholder-[#6b7280] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
-                       />
-                      ) : (
-                        <select
-                          id="bidang"
-                          name="bidang"
-                          value={form.bidang}
-                          onChange={handleChange}
-                          required
-                          disabled={loading || success}
-                          className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed appearance-none"
-                        >
-                          <option value="" className="text-[#6b7280]">
-                            Pilih Bidang
-                          </option>
-                          {roleOptions.bidang.map((bidang) => (
-                            <option key={bidang} value={bidang}>
-                              {bidang}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-
-                    {/* --- BAGIAN JABATAN --- */}
-                    <div className="space-y-2">
-                       <div className="flex justify-between items-center">
-                        <label htmlFor="jabatan" className="block text-sm font-semibold text-[#000000]">
-                          Jabatan
-                        </label>
-                        {/* Tombol Toggle hanya muncul jika BUKAN staff (karena staff sudah default input) */}
-                        {selectedRole !== 'staff' && (
-                          <button
-                            type="button"
-                            onClick={toggleCustomJabatan}
-                            className="text-xs flex items-center gap-1 text-teal-600 hover:text-teal-800 transition-colors"
-                          >
-                             {isCustomJabatan ? (
-                              <>
-                                <ListFilter className="w-3 h-3" /> Pilih dari List
-                              </>
-                            ) : (
-                              <>
-                                <Pencil className="w-3 h-3" /> Input Manual
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
-
-                      {selectedRole === 'staff' || isCustomJabatan ? (
-                        <input
-                          id="jabatan-input"
-                          type="text"
-                          name="jabatan"
-                          placeholder="Masukkan jabatan (contoh: Staff Administrasi)"
-                          value={form.jabatan}
-                          onChange={handleChange}
-                          required
-                          disabled={loading || success}
-                          className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] placeholder-[#6b7280] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
+                            name="password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={form.password}
+                            onChange={handleChange}
+                            required
+                            disabled={loading || success}
+                            className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:border-white/30 text-white placeholder-zinc-600 transition-all text-sm"
                         />
-                      ) : (
-                        <select
-                          id="jabatan-select"
-                          name="jabatan"
-                          value={form.jabatan}
-                          onChange={handleChange}
-                          required
-                          disabled={loading || success}
-                          className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-transparent outline-none transition-all duration-200 text-[#000000] shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed appearance-none"
-                        >
-                          <option value="" className="text-[#6b7280]">
-                            Pilih Jabatan
-                          </option>
-                          {roleOptions.jabatan.map((jabatan) => (
-                            <option key={jabatan} value={jabatan}>
-                              {jabatan}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
+                      </div>
                   </div>
 
-                  <div className="flex gap-4 pt-4">
+                  {/* Position Info Group */}
+                  <div className="space-y-4 pt-2">
+                      <p className="text-xs font-bold text-zinc-600 uppercase tracking-widest border-b border-white/5 pb-2 mb-4">Posisi & Jabatan</p>
+                      
+                      <div className="grid grid-cols-1 gap-5">
+                        
+                        {/* BIDANG INPUT */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center ml-1">
+                                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Bidang / Divisi</label>
+                                <button type="button" onClick={toggleCustomBidang} className="text-[10px] flex items-center gap-1.5 text-zinc-500 hover:text-white transition-colors py-1 px-2 rounded-lg hover:bg-white/5">
+                                    {isCustomBidang ? <><ListFilter className="w-3 h-3" /> Pilih List</> : <><Pencil className="w-3 h-3" /> Input Manual</>}
+                                </button>
+                            </div>
+                            
+                            {isCustomBidang ? (
+                                <input
+                                    name="bidang"
+                                    type="text"
+                                    placeholder="Nama bidang kustom..."
+                                    value={form.bidang}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:border-white/30 text-white placeholder-zinc-600 transition-all text-sm"
+                                />
+                            ) : (
+                                <div className="relative">
+                                    <select
+                                        name="bidang"
+                                        value={form.bidang}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:border-white/30 text-white appearance-none cursor-pointer text-sm"
+                                    >
+                                        <option value="">Pilih Bidang...</option>
+                                        {roleOptions.bidang.map((b) => <option key={b} value={b}>{b}</option>)}
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <div className="w-1.5 h-1.5 border-r border-b border-zinc-500 rotate-45 mb-0.5"></div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* JABATAN INPUT */}
+                        <div className="space-y-2">
+                             <div className="flex justify-between items-center ml-1">
+                                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Jabatan</label>
+                                {selectedRole !== 'staff' && (
+                                    <button type="button" onClick={toggleCustomJabatan} className="text-[10px] flex items-center gap-1.5 text-zinc-500 hover:text-white transition-colors py-1 px-2 rounded-lg hover:bg-white/5">
+                                        {isCustomJabatan ? <><ListFilter className="w-3 h-3" /> Pilih List</> : <><Pencil className="w-3 h-3" /> Input Manual</>}
+                                    </button>
+                                )}
+                            </div>
+
+                            {selectedRole === 'staff' || isCustomJabatan ? (
+                                <input
+                                    name="jabatan"
+                                    type="text"
+                                    placeholder="Cth: Staff Administrasi Umum"
+                                    value={form.jabatan}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:border-white/30 text-white placeholder-zinc-600 transition-all text-sm"
+                                />
+                            ) : (
+                                <div className="relative">
+                                    <select
+                                        name="jabatan"
+                                        value={form.jabatan}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:border-white/30 text-white appearance-none cursor-pointer text-sm"
+                                    >
+                                        <option value="">Pilih Jabatan...</option>
+                                        {roleOptions.jabatan.map((j) => <option key={j} value={j}>{j}</option>)}
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <div className="w-1.5 h-1.5 border-r border-b border-zinc-500 rotate-45 mb-0.5"></div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                      </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="flex gap-4 pt-6 mt-4 border-t border-white/5">
                     <button
                       type="button"
                       onClick={closeModal}
                       disabled={loading}
-                      className="flex-1 py-3 px-6 bg-white text-[#000000] border border-[#e5e7eb] rounded-xl font-medium transition-colors duration-200 hover:bg-gray-50 shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
+                      className="flex-1 py-3.5 px-6 bg-transparent text-zinc-400 border border-white/5 rounded-xl font-semibold transition-colors duration-200 hover:bg-white/5 hover:text-white"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
                       disabled={loading || success}
-                      className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center justify-center ${loading || success
-                          ? 'bg-black text-white cursor-not-allowed opacity-75'
-                          : 'bg-black text-white hover:opacity-90 shadow-md hover:-translate-y-0.5'
+                      className={`flex-1 py-3.5 px-6 rounded-xl font-bold transition-all duration-200 flex items-center justify-center shadow-lg shadow-white/5 ${loading || success
+                          ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                          : 'bg-white text-black hover:bg-zinc-200'
                         }`}
                     >
                       {loading ? (
                         <>
-                          <Loader className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Menyimpan...
                         </>
                       ) : success ? (
                         <>
-                          <Check className="mr-2 h-4 w-4" aria-hidden="true" />
-                          Berhasil!
+                          <Check className="mr-2 h-4 w-4" />
+                          Tersimpan
                         </>
                       ) : (
-                        `Simpan ${getRoleLabel(selectedRole)}`
+                        'Simpan Akun'
                       )}
                     </button>
                   </div>

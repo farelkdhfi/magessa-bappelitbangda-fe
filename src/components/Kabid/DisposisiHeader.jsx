@@ -1,5 +1,14 @@
 import React from 'react';
-import { AlertCircle, ArrowLeft, Check, FileText, Forward, MessageSquare } from 'lucide-react';
+import { 
+  AlertCircle, 
+  ArrowLeft, 
+  Check, 
+  FileText, 
+  Forward, 
+  MessageSquare,
+  Download,
+  FileDown
+} from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,7 +27,7 @@ const DisposisiHeader = ({
 }) => {
   const navigate = useNavigate();
 
-  // Helper function untuk cek kondisi tombol
+  // Helper function untuk cek kondisi tombol (Logic dipertahankan 100%)
   const canAcceptDisposisi = () => disposisi && 
     disposisi.status === 'dibaca' && 
     disposisi.status_dari_kabid !== 'diterima' && 
@@ -31,104 +40,136 @@ const DisposisiHeader = ({
     (disposisi.status_dari_kabid === 'diterima' || disposisi.status === 'diproses');
 
   return (
-    <div className="mb-2 p-4 bg-white rounded-2xl shadow-lg">
-      <button
-        onClick={() => navigate(-1)}
-        className="group inline-flex items-center mb-3"
-      >
-        <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-        <span className="font-semibold">Kembali</span>
-      </button>
+    <div className="relative w-full">
+      {/* Container Utama dengan gaya Glassmorphism */}
+      <div className="bg-zinc-900/50 backdrop-blur-md border border-white/5 rounded-3xl p-6 md:p-8 overflow-hidden relative group transition-all duration-500 hover:border-white/10">
+        
+        {/* Background Glow Effect */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none transition-opacity duration-500 group-hover:bg-white/10" />
 
-      <div className="px-4 mb-4">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
-          <div className="flex-1">
-            <h1 className="md:text-lg text-lg font-bold">Detail Disposisi</h1>
-            <p className="text-xs font-medium mt-1">Kelola dan berikan feedback terhadap disposisi yang diterima</p>
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-start justify-between gap-8">
+          
+          {/* Bagian Kiri: Judul & Info */}
+          <div className="space-y-6 flex-1">
+            {/* Tombol Kembali (Styled) */}
+            <button
+              onClick={() => navigate(-1)}
+              className="group flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm font-medium w-fit"
+            >
+              <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 border border-white/5 transition-all">
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              </div>
+              <span>Kembali</span>
+            </button>
 
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-px w-8 bg-zinc-700"></div>
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                  Control Panel
+                </span>
+              </div>
+              <h1 className="text-3xl font-light text-white tracking-tight">
+                Detail <span className="font-semibold text-zinc-400">Disposisi</span>
+              </h1>
+              <p className="text-zinc-500 text-sm mt-2 max-w-lg leading-relaxed">
+                Kelola status, unduh dokumen, dan berikan feedback untuk disposisi yang masuk ke divisi Anda.
+              </p>
+            </div>
+
+            {/* Tombol Download PDF (Styled as Secondary Action) */}
             <button
               onClick={onDownloadPDF}
               disabled={downloadLoading}
-              className={`group inline-flex mt-2 items-center px-6 py-3 shadow-lg rounded-xl font-medium transition-all duration-200 border border-slate-200 shadow-sm${
-                downloadLoading
-                  ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-black opacity-75 cursor-not-allowed'
-                  : 'bg-gradient-to-br from-gray-500 to-gray-700 hover:from-gray-700 hover:to-gray-900 text-black hover:shadow-md hover:-translate-y-0.5'
-              }`}
+              className={`
+                group flex items-center gap-3 px-5 py-3 rounded-xl border transition-all duration-300
+                ${downloadLoading 
+                  ? 'bg-zinc-800/50 border-white/5 text-zinc-600 cursor-not-allowed' 
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white shadow-lg shadow-black/20'
+                }
+              `}
             >
               {downloadLoading ? (
-                <>
-                  <div className="w-5 h-5 mr-2 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                  Mengunduh...
-                </>
+                <div className="w-5 h-5 border-2 border-zinc-500 border-t-zinc-300 rounded-full animate-spin"></div>
               ) : (
-                <>
-                  <FileText className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                  Download Lembar Disposisi
-                </>
+                <div className="p-1.5 bg-zinc-800 rounded-lg group-hover:bg-zinc-700 transition-colors">
+                  <FileDown className="w-4 h-4" />
+                </div>
               )}
+              <span className="text-sm font-medium">
+                {downloadLoading ? 'Mengunduh Dokumen...' : 'Unduh Lembar Disposisi'}
+              </span>
             </button>
           </div>
 
+          {/* Bagian Kanan: Status & Actions */}
           {disposisi && (
-            <div className="flex flex-col items-start mt-2 md:mt-0 md:items-end space-y-4">
-              {/* Status Badge */}
-              <StatusBadge status={disposisi.status_dari_kabid} />
+            <div className="flex flex-col items-start lg:items-end gap-6 min-w-[300px]">
+              
+              {/* Status Badge Wrapper */}
+              <div className="bg-black/20 backdrop-blur-sm px-4 py-2 rounded-2xl border border-white/5">
+                <StatusBadge status={disposisi.status_dari_kabid} />
+              </div>
 
-              {/* Tombol Aksi */}
-              <div className="flex flex-col sm:flex-row gap-2">
+              {/* Action Buttons Grid */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                
+                {/* 1. Accept Button (Primary Action - White) */}
                 {canAcceptDisposisi() && (
                   <button
                     onClick={onAcceptDisposisi}
                     disabled={acceptLoading}
                     className={`
-                      group inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 border border-slate-200 shadow-sm
+                      relative overflow-hidden group flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 shadow-xl
                       ${acceptLoading
-                        ? 'bg-black text-white opacity-75 cursor-not-allowed'
-                        : 'bg-black text-white hover:shadow-md hover:-translate-y-0.5'
+                        ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                        : 'bg-white text-black hover:bg-zinc-200 shadow-white/5 hover:shadow-white/10 hover:-translate-y-0.5'
                       }
                     `}
                   >
                     {acceptLoading ? (
                       <>
-                        <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Memproses...
+                         <div className="w-4 h-4 border-2 border-zinc-400 border-t-zinc-800 rounded-full animate-spin"></div>
+                         <span>Memproses...</span>
                       </>
                     ) : (
                       <>
-                        <Check className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                        Terima Disposisi
+                        <Check className="w-4 h-4" />
+                        <span>Terima Disposisi</span>
                       </>
                     )}
                   </button>
                 )}
 
+                {/* 2. Forward Button (Secondary Action - Glass) */}
                 {canForwardDisposisi() && !showForwardModal && !showFeedbackForm && !editingFeedbackId && (
                   <button
                     onClick={onShowForwardModal}
-                    className="group inline-flex items-center px-6 py-3 rounded-xl bg-neutral-800 text-white font-semibold hover:shadow-md hover:-translate-y-0.5 shadow-sm transition-all duration-200 border border-slate-200"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-zinc-800/80 hover:bg-zinc-700 text-white font-medium text-sm border border-white/5 hover:border-white/20 transition-all duration-300 shadow-lg shadow-black/20 hover:-translate-y-0.5"
                   >
-                    <Forward className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                    Teruskan
+                    <Forward className="w-4 h-4 text-indigo-400 group-hover:text-white" />
+                    <span>Teruskan</span>
                   </button>
                 )}
 
+                {/* 3. Feedback Button (Secondary Action - Glass) */}
                 {canGiveFeedback() && !showForwardModal && !showFeedbackForm && !editingFeedbackId && (
                   <button
                     onClick={onShowFeedbackForm}
-                    className="group inline-flex items-center px-6 py-3 rounded-xl bg-black text-white font-semibold hover:shadow-md hover:-translate-y-0.5 shadow-sm transition-all duration-200 border border-slate-200"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-zinc-800/80 hover:bg-zinc-700 text-white font-medium text-sm border border-white/5 hover:border-white/20 transition-all duration-300 shadow-lg shadow-black/20 hover:-translate-y-0.5"
                   >
-                    <MessageSquare className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                    Beri Feedback
+                    <MessageSquare className="w-4 h-4 text-emerald-400 group-hover:text-white" />
+                    <span>Beri Feedback</span>
                   </button>
                 )}
               </div>
 
-              {/* Error message */}
+              {/* Error Message */}
               {acceptError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl shadow-sm">
-                  <div className="flex items-center">
-                    <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                    <span className="font-medium">{acceptError}</span>
+                <div className="w-full animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span className="font-medium leading-relaxed">{acceptError}</span>
                   </div>
                 </div>
               )}

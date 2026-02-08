@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { Camera, LayoutDashboard } from 'lucide-react';
+import { Camera, LayoutDashboard, Plus, Search, AlertCircle } from 'lucide-react';
 import PostCard from '../documentation/PostCard';
 import TrendingView from '../documentation/TrendingView';
 import ProfileView from '../documentation/ProfileView';
@@ -21,7 +21,6 @@ const DocumentationPage = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
-
 
     // State untuk posting
     const [showCreatePost, setShowCreatePost] = useState(false);
@@ -133,18 +132,14 @@ const DocumentationPage = () => {
 
             setUserStats(statsResponse.data.data);
 
-            // Handle posts dengan pagination
             const { data: newPosts, pagination } = postsResponse.data;
 
             if (append && page > 1) {
-                // Append posts untuk load more
                 setUserPosts(prevPosts => [...prevPosts, ...newPosts]);
             } else {
-                // Replace posts untuk initial load
                 setUserPosts(newPosts);
             }
 
-            // Update pagination state
             setProfilePage(pagination.page);
             setProfileHasMore(pagination.has_more);
 
@@ -157,7 +152,6 @@ const DocumentationPage = () => {
 
     const loadMoreProfilePosts = async () => {
         if (!profileHasMore) return;
-
         const nextPage = profilePage + 1;
         await loadUserProfile(profileUserId, nextPage, true);
     };
@@ -170,23 +164,17 @@ const DocumentationPage = () => {
         setCurrentPage('profile');
     };
 
-
-
-    // Ganti function performSearch di App.js (sekitar baris 97)
     const performSearch = async () => {
         if (!feedFilters.search.trim()) return;
         setSearchLoading(true);
         try {
             const params = new URLSearchParams();
-            params.append('search', feedFilters.search); // Pakai 'search' bukan 'q'
+            params.append('search', feedFilters.search);
             if (feedFilters.kategori) params.append('kategori', feedFilters.kategori);
             params.append('page', feedFilters.page);
             params.append('limit', '10');
 
-            // Gunakan endpoint feed yang sudah include files
             const response = await api.get(`/dokumentasi/?${params}`);
-
-            console.log('Fixed search with files:', response.data.data[0]?.files);
 
             if (feedFilters.page === 1) {
                 setSearchResults(response.data.data);
@@ -199,16 +187,13 @@ const DocumentationPage = () => {
         setSearchLoading(false);
     };
 
-    // Updated handleCreatePost - sekarang menerima data sebagai parameter
     const handleCreatePost = async (postData) => {
-        // Validation sudah dilakukan di modal
         try {
             const formData = new FormData();
             formData.append('caption', postData.caption);
             formData.append('kategori', postData.kategori);
             formData.append('tags', postData.tags);
 
-            // Handle files
             if (postData.files && postData.files.length > 0) {
                 postData.files.forEach(file => {
                     formData.append('files', file);
@@ -219,7 +204,6 @@ const DocumentationPage = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            // Reload appropriate page
             if (currentPage === 'feed') {
                 setFeedFilters(prev => ({ ...prev, page: 1 }));
                 loadFeed();
@@ -228,7 +212,6 @@ const DocumentationPage = () => {
             }
         } catch (error) {
             console.error('Error creating post:', error);
-            // Re-throw error agar bisa di-handle oleh modal
             throw new Error('Gagal membuat post. Silakan coba lagi.');
         }
     };
@@ -241,7 +224,6 @@ const DocumentationPage = () => {
                 kategori: editingPost.kategori,
                 tags: editingPost.tags
             });
-            // Update posts in current view
             const updatePosts = (posts) => posts.map(post =>
                 post.id === editingPost.id
                     ? { ...post, ...editingPost, updated_at: new Date().toISOString() }
@@ -256,17 +238,16 @@ const DocumentationPage = () => {
             }
             setEditingPost(null);
             setShowPostMenu(null);
-            alert('Post berhasil diupdate!');
+            // alert('Post berhasil diupdate!'); 
         } catch (error) {
             console.error('Error updating post:', error);
-            alert('Gagal mengupdate post');
+            // alert('Gagal mengupdate post');
         }
     };
 
     const handleDeletePost = async (postId) => {
         try {
             await api.delete(`/dokumentasi/${postId}`);
-            // Remove post from all views
             const filterPosts = (posts) => posts.filter(post => post.id !== postId);
             setPosts(filterPosts);
             setUserPosts(filterPosts);
@@ -277,10 +258,10 @@ const DocumentationPage = () => {
             }
             setShowDeleteConfirm(null);
             setShowPostMenu(null);
-            alert('Post berhasil dihapus!');
+            // alert('Post berhasil dihapus!');
         } catch (error) {
             console.error('Error deleting post:', error);
-            alert('Gagal menghapus post');
+            // alert('Gagal menghapus post');
         }
     };
 
@@ -355,10 +336,8 @@ const DocumentationPage = () => {
                     comments: prev.comments.filter(comment => comment.id !== commentId)
                 }));
             }
-            alert('Komentar berhasil dihapus!');
         } catch (error) {
             console.error('Error deleting comment:', error);
-            alert('Gagal menghapus komentar');
         }
     };
 
@@ -380,10 +359,9 @@ const DocumentationPage = () => {
         }
     };
 
-    // Show loading or login prompt
     if (authLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-black flex items-center justify-center">
                 <LoadingSpinner />
             </div>
         );
@@ -391,16 +369,17 @@ const DocumentationPage = () => {
 
     if (!user) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-                <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-                        Dokumentasi
-                    </h1>
-                    <p className="text-gray-600 mb-6">
-                        Silakan login untuk mengakses sistem dokumentasi
+            <div className="min-h-screen bg-black flex items-center justify-center p-4">
+                <div className="bg-zinc-900 border border-white/10 p-8 rounded-3xl shadow-2xl text-center max-w-md w-full">
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/5">
+                        <AlertCircle className="w-8 h-8 text-zinc-400" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-white mb-2">Akses Terbatas</h1>
+                    <p className="text-zinc-500 mb-8 text-sm">
+                        Silakan login akun anda untuk mengakses sistem dokumentasi.
                     </p>
-                    <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-                        Login
+                    <button className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 transition-colors">
+                        Login Sekarang
                     </button>
                 </div>
             </div>
@@ -408,7 +387,7 @@ const DocumentationPage = () => {
     }
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen text-zinc-200 font-sans selection:bg-white/20 pb-20">
             <Navbar
                 user={user}
                 currentPage={currentPage}
@@ -418,53 +397,64 @@ const DocumentationPage = () => {
                 loadUserProfile={handleProfileNavigation}
             />
 
-            {/* Main Content */}
-            <main className="">
-
-                {currentPage == 'feed' && (
-                    <div className="mb-6">
-                        <div className="flex items-center justify-center mb-4">
-                            <div className="bg-black p-3 rounded-full">
-                                <LayoutDashboard className="w-6 h-6 text-white" />
+            <main className="max-w-5xl mx-auto pt-6 px-4 md:px-8">
+                
+                {/* Header Feed */}
+                {currentPage === 'feed' && (
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/5 rounded-lg border border-white/5 backdrop-blur-sm">
+                                    <LayoutDashboard className="w-5 h-5 text-zinc-400" />
+                                </div>
+                                <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">
+                                    Team Updates
+                                </p>
                             </div>
-                        </div>
-                        <div className="text-center">
-                            <h1 className="text-2xl font-bold text-gray-900 mb-2">Timeline</h1>
-                            <p className="text-gray-500 text-sm">Dokumentasi dari seluruh pegawai</p>
+                            <h1 className="text-3xl font-light tracking-tight text-white">
+                                Dokumentasi <span className="font-semibold text-zinc-400">Kegiatan</span>
+                            </h1>
                         </div>
                     </div>
                 )}
 
+                {/* Search Bar Wrapper */}
                 {(currentPage === 'feed' || currentPage === 'search') && (
-
-                    <SearchBar
-                        feedFilters={feedFilters}
-                        categories={categories}
-                        handleSearch={handleSearch}
-                        setFeedFilters={setFeedFilters}
-                    />
+                    <div className="mb-8">
+                        <SearchBar
+                            feedFilters={feedFilters}
+                            categories={categories}
+                            handleSearch={handleSearch}
+                            setFeedFilters={setFeedFilters}
+                        />
+                    </div>
                 )}
+
+                {/* --- FEED VIEW --- */}
                 {currentPage === 'feed' && (
-                    <>
+                    <div className="space-y-6">
                         {loading && posts.length === 0 ? (
-                            <div className="text-center py-12">
+                            <div className="flex justify-center py-20">
                                 <LoadingSpinner />
                             </div>
                         ) : posts.length === 0 ? (
-                            <div className="text-center py-12">
-                                <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                <h3 className="text-xl font-semibold text-gray-700 mb-2">Belum ada dokumentasi</h3>
-                                <p className="text-gray-500 mb-4">Mulai dokumentasikan aktivitas kamu!</p>
+                            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-3xl bg-zinc-900/20">
+                                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-white/5">
+                                    <Camera className="w-6 h-6 text-zinc-600" />
+                                </div>
+                                <h3 className="text-white font-medium mb-1">Belum ada dokumentasi</h3>
+                                <p className="text-zinc-500 text-sm mb-6">Mulai dokumentasikan aktivitas kamu!</p>
                                 <button
                                     onClick={() => setShowCreatePost(true)}
-                                    className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+                                    className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-zinc-200 transition-all"
                                 >
+                                    <Plus className="w-4 h-4" />
                                     Buat Post Pertama
                                 </button>
                             </div>
                         ) : (
                             <>
-                                <div>
+                                <div className="grid grid-cols-1 gap-6">
                                     {posts.map(post => (
                                         <PostCard
                                             key={post.id}
@@ -484,11 +474,12 @@ const DocumentationPage = () => {
                                         />
                                     ))}
                                 </div>
+                                
                                 {!loading && (
-                                    <div className="text-center mt-8 mb-30">
+                                    <div className="text-center mt-10">
                                         <button
                                             onClick={() => setFeedFilters(prev => ({ ...prev, page: prev.page + 1 }))}
-                                            className="bg-white border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50"
+                                            className="px-8 py-3 rounded-xl bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all text-sm font-medium"
                                         >
                                             Muat Lebih Banyak
                                         </button>
@@ -496,8 +487,10 @@ const DocumentationPage = () => {
                                 )}
                             </>
                         )}
-                    </>
+                    </div>
                 )}
+
+                {/* --- TRENDING VIEW --- */}
                 {currentPage === 'trending' && (
                     <TrendingView
                         trendingPosts={trendingPosts}
@@ -507,6 +500,8 @@ const DocumentationPage = () => {
                         loadUserProfile={loadUserProfile}
                     />
                 )}
+
+                {/* --- PROFILE VIEW --- */}
                 {currentPage === 'profile' && (
                     <ProfileView
                         user={user}
@@ -519,13 +514,14 @@ const DocumentationPage = () => {
                         onLoadMorePosts={profileHasMore ? loadMoreProfilePosts : null}
                     />
                 )}
+
+                {/* --- SEARCH VIEW --- */}
                 {currentPage === 'search' && (
                     <SearchView
                         feedFilters={feedFilters}
                         searchResults={searchResults}
                         searchLoading={searchLoading}
                         setFeedFilters={setFeedFilters}
-                        // Props needed by PostCard
                         user={user}
                         handleLike={handleLike}
                         openPostDetail={openPostDetail}
@@ -542,7 +538,7 @@ const DocumentationPage = () => {
                 )}
             </main>
 
-            {/* Modals */}
+            {/* --- MODALS --- */}
             <CreatePostModal
                 showCreatePost={showCreatePost}
                 setShowCreatePost={setShowCreatePost}

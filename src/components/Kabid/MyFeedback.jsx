@@ -1,6 +1,19 @@
-import React from 'react'
+import React from 'react';
 import StatusBadge from './StatusBadge';
-import { AlertCircle, Calendar, Clock, Edit, FileText, MessageSquare, Paperclip, Save, Trash2, X } from 'lucide-react';
+import { 
+    AlertCircle, 
+    Calendar, 
+    Clock, 
+    Edit, 
+    FileText, 
+    MessageSquare, 
+    Paperclip, 
+    Save, 
+    Trash2, 
+    X,
+    CheckCircle2,
+    ImageIcon
+} from 'lucide-react';
 import isImageFile from '../../utils/isImageFile';
 
 const MyFeedback = ({
@@ -19,83 +32,105 @@ const MyFeedback = ({
     cancelEditFeedback,
     setSelectedImage
 }) => {
+    // Helper untuk Radio Button Style
+    const RadioOption = ({ label, value, checked, onChange }) => (
+        <label className={`
+            flex-1 relative flex items-center justify-center p-3 rounded-xl border cursor-pointer transition-all duration-300
+            ${checked 
+                ? 'bg-teal-500/10 border-teal-500/50 text-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.15)]' 
+                : 'bg-zinc-900/50 border-white/5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+            }
+        `}>
+            <input
+                type="radio"
+                name="status"
+                value={value}
+                checked={checked}
+                onChange={onChange}
+                className="sr-only" // Sembunyikan radio default
+            />
+            <div className="flex items-center gap-2">
+                {checked && <CheckCircle2 className="w-4 h-4" />}
+                <span className="text-sm font-medium">{label}</span>
+            </div>
+        </label>
+    );
+
     return (
         <div>
             {feedbackList.length > 0 && (
-                <div className="bg-gradient-to-bl from-teal-100 via-teal-50 to-teal-200 rounded-2xl shadow-md border-2 border-slate-200 p-2 md:p-6">
-                    <div className="flex items-center mb-4">
-                        <div className="p-3 bg-white rounded-xl shadow-md mr-3">
-                            <MessageSquare className="w-6 h-6 text-teal-400" />
+                <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden">
+                    {/* Background Glow */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+
+                    {/* Header Section */}
+                    <div className="flex items-center gap-4 mb-8 relative z-10">
+                        <div className="p-3 bg-zinc-800/50 rounded-2xl border border-white/5 text-teal-400 shadow-inner">
+                            <MessageSquare className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="font-semibold" >Feedback yang Telah Dikirim</h3>
-                            <p className="text-xs font-medium" >Riwayat tanggapan yang telah Anda berikan</p>
+                            <h3 className="text-xl font-semibold text-white tracking-tight">Feedback Terkirim</h3>
+                            <p className="text-sm text-zinc-500">Riwayat tanggapan yang telah Anda berikan</p>
                         </div>
                     </div>
-                    <div className="space-y-3">
+
+                    <div className="space-y-4 relative z-10">
                         {feedbackList.map((feedback) => (
-                            <div key={feedback.id} className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                                {/* Header Feedback */}
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-4">
-                                    <div className="space-y-2">
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm" >
-                                            <div className="flex items-center">
-                                                <Calendar className="w-4 h-4 mr-2" />
-                                                Dibuat: {new Date(feedback.created_at).toLocaleString('id-ID', {
-                                                    day: 'numeric',
-                                                    month: 'long',
-                                                    year: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
+                            <div key={feedback.id} className="group bg-black/20 hover:bg-black/40 border border-white/5 hover:border-white/10 rounded-2xl p-6 transition-all duration-300">
+                                
+                                {/* Header Item Feedback */}
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+                                    <div className="space-y-1">
+                                        <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-zinc-500">
+                                            <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                                                <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                                                {new Date(feedback.created_at).toLocaleString('id-ID', {
+                                                    day: 'numeric', month: 'short', year: 'numeric',
+                                                    hour: '2-digit', minute: '2-digit',
                                                     timeZone: 'Asia/Jakarta'
                                                 })}
                                             </div>
+                                            
                                             {feedback.updated_at && feedback.updated_at !== feedback.created_at && (
-                                                <div className="flex items-center bg-[#FDFCFB] text-[#6D4C41] px-3 py-1 rounded-lg border border-slate-200">
-                                                    <Clock className="w-3 h-3 mr-1" />
-                                                    Diperbarui: {new Date(feedback.updated_at).toLocaleString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'long',
-                                                        year: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                        timeZone: 'Asia/Jakarta'
-                                                    })}
+                                                <div className="flex items-center gap-1.5 text-teal-500/70">
+                                                    <Clock className="w-3 h-3" />
+                                                    <span>Diedit: {new Date(feedback.updated_at).toLocaleDateString('id-ID')}</span>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
+
                                     {!editingFeedbackId && !showFeedbackForm && !showForwardModal && (
                                         <button
                                             onClick={() => fetchFeedbackForEdit(feedback.id)}
                                             disabled={editLoading}
-                                            className="group inline-flex items-center px-4 py-2 bg-black text-white rounded-xl transition-all duration-200 hover:shadow-md border border-slate-200"
-                                            title="Edit Feedback"
+                                            className="self-start px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-white hover:text-black text-zinc-400 text-xs font-semibold transition-all flex items-center gap-2 border border-white/5 disabled:opacity-50"
                                         >
                                             {editLoading ? (
-                                                <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                             ) : (
-                                                <Edit className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                                                <Edit className="w-3.5 h-3.5" />
                                             )}
-                                            <span className="font-semibold">Edit</span>
+                                            Edit
                                         </button>
                                     )}
                                 </div>
-                                {/* Jika sedang dalam mode edit untuk feedback ini */}
+
+                                {/* EDIT MODE */}
                                 {editingFeedbackId === feedback.id ? (
-                                    <div className="space-y-3">
+                                    <div className="bg-zinc-900/50 rounded-xl border border-white/5 p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200">
                                         {feedbackError && (
-                                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl shadow-sm">
-                                                <div className="flex items-center">
-                                                    <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                                                    <span className="font-medium">{feedbackError}</span>
-                                                </div>
+                                            <div className="mb-4 flex items-center gap-3 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm">
+                                                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                                <span>{feedbackError}</span>
                                             </div>
                                         )}
-                                        <form onSubmit={handleEditFeedbackSubmit} className="space-y-3">
-                                            <div>
-                                                <label className="block text-sm font-semibold mb-3" >
-                                                    Catatan Feedback *
+                                        
+                                        <form onSubmit={handleEditFeedbackSubmit} className="space-y-5">
+                                            {/* Textarea */}
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                                                    Catatan Feedback <span className="text-red-500">*</span>
                                                 </label>
                                                 <textarea
                                                     name="notes"
@@ -103,113 +138,105 @@ const MyFeedback = ({
                                                     onChange={handleEditFeedbackChange}
                                                     required
                                                     rows="5"
-                                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 resize-none text-[#2E2A27] shadow-sm"
-                                                    placeholder="Masukkan catatan feedback Anda..."
+                                                    className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:border-teal-500/50 focus:bg-black/60 text-white placeholder-zinc-600 resize-none transition-all text-sm leading-relaxed"
+                                                    placeholder="Tuliskan feedback Anda..."
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold mb-3" >
-                                                    Status Disposisi *
+
+                                            {/* Status Radio */}
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                                                    Update Status <span className="text-red-500">*</span>
                                                 </label>
-                                                <div className="flex gap-2">
-                                                    <label className="flex items-center cursor-pointer group">
-                                                        <input
-                                                            type="radio"
-                                                            name="status"
-                                                            value="diproses"
-                                                            checked={editFeedbackData.status === 'diproses'}
-                                                            onChange={handleEditFeedbackChange}
-                                                            className="w-4 h-4 text-black border-slate-200 focus:ring-teal-400"
-                                                        />
-                                                        <span className="ml-3 font-medium" >Diproses</span>
-                                                    </label>
-                                                    <label className="flex items-center cursor-pointer group">
-                                                        <input
-                                                            type="radio"
-                                                            name="status"
-                                                            value="selesai"
-                                                            checked={editFeedbackData.status === 'selesai'}
-                                                            onChange={handleEditFeedbackChange}
-                                                            className="w-4 h-4 text-black border-slate-200 focus:ring-teal-400"
-                                                        />
-                                                        <span className="ml-3 font-medium" >Selesai</span>
-                                                    </label>
+                                                <div className="flex gap-3">
+                                                    <RadioOption 
+                                                        label="Diproses" 
+                                                        value="diproses" 
+                                                        checked={editFeedbackData.status === 'diproses'} 
+                                                        onChange={handleEditFeedbackChange} 
+                                                    />
+                                                    <RadioOption 
+                                                        label="Selesai" 
+                                                        value="selesai" 
+                                                        checked={editFeedbackData.status === 'selesai'} 
+                                                        onChange={handleEditFeedbackChange} 
+                                                    />
                                                 </div>
                                             </div>
-                                            {/* File yang sudah ada */}
+
+                                            {/* Existing Files */}
                                             {editFeedbackData.existingFiles.length > 0 && (
-                                                <div>
-                                                    <label className="block text-sm font-semibold mb-3" >
-                                                        File yang sudah ada
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                                                        File Tersimpan
                                                     </label>
-                                                    <div className="space-y-3">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                         {editFeedbackData.existingFiles.map((file) => (
-                                                            <div key={file.id} className="flex items-center justify-between bg-[#FDFCFB] p-4 rounded-xl border border-slate-200 shadow-sm">
-                                                                <div className="flex items-center">
-                                                                    <div className="p-2 bg-slate-600 rounded-lg mr-3">
-                                                                        <FileText className="w-4 h-4 text-white" />
+                                                            <div key={file.id} className="flex items-center justify-between bg-zinc-800/40 p-2.5 rounded-lg border border-white/5">
+                                                                <div className="flex items-center overflow-hidden">
+                                                                    <div className="p-1.5 bg-zinc-700/50 rounded-md mr-3">
+                                                                        <FileText className="w-3.5 h-3.5 text-zinc-300" />
                                                                     </div>
-                                                                    <span className="font-medium truncate max-w-[140px]" >{file.filename}</span>
+                                                                    <span className="text-xs text-zinc-300 truncate max-w-[120px]">{file.filename}</span>
                                                                 </div>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleRemoveExistingFile(file.id)}
-                                                                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
+                                                                    className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
                                                                 >
-                                                                    <Trash2 className="w-4 h-4" />
+                                                                    <Trash2 className="w-3.5 h-3.5" />
                                                                 </button>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 </div>
                                             )}
-                                            <div>
-                                                <label className="block text-sm font-semibold mb-3" >
-                                                    Tambah File Baru (maks. 5 file)
+
+                                            {/* Upload New Files */}
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                                                    Upload Baru (Max 5)
                                                 </label>
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    onChange={handleEditFileChange}
-                                                    accept="image/*,application/pdf"
-                                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 shadow-sm"
-                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        onChange={handleEditFileChange}
+                                                        accept="image/*,application/pdf"
+                                                        className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-zinc-400 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700 cursor-pointer focus:outline-none"
+                                                    />
+                                                </div>
                                                 {editFeedbackData.newFiles.length > 0 && (
-                                                    <div className="mt-2 text-sm bg-green-50 px-3 py-2 rounded-lg border border-green-200 shadow-sm">
-                                                        <Paperclip className="w-4 h-4 inline mr-2" />
-                                                        {editFeedbackData.newFiles.length} file baru dipilih
+                                                    <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded-lg border border-emerald-500/20">
+                                                        <Paperclip className="w-3.5 h-3.5" />
+                                                        <span>{editFeedbackData.newFiles.length} file baru dipilih</span>
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex justify-end space-x-4 pt-4 border-t border-slate-200">
+
+                                            {/* Action Buttons */}
+                                            <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
                                                 <button
                                                     type="button"
                                                     onClick={cancelEditFeedback}
-                                                    className="px-6 py-3 border border-slate-200 rounded-xl text-[#2E2A27] hover:bg-[#FDFCFB] font-semibold transition-colors shadow-sm flex items-center"
+                                                    className="px-5 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 font-medium text-sm transition-colors"
                                                 >
-                                                    <X className="w-4 h-4 inline mr-2" />
                                                     Batal
                                                 </button>
                                                 <button
                                                     type="submit"
                                                     disabled={editLoading}
-                                                    className={`
-                                  group inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 border border-slate-200 shadow-sm
-                                  ${editLoading
-                                                            ? 'bg-black text-white opacity-75 cursor-not-allowed'
-                                                            : 'bg-black text-white hover:shadow-md hover:-translate-y-0.5'
-                                                        }
-                                `}
+                                                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-xl font-bold text-sm transition-all shadow-lg shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {editLoading ? (
                                                         <>
-                                                            <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                            Memperbarui...
+                                                            <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                                            <span>Menyimpan...</span>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <Save className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                                                            Perbarui Feedback
+                                                            <Save className="w-4 h-4" />
+                                                            <span>Simpan Perubahan</span>
                                                         </>
                                                     )}
                                                 </button>
@@ -217,61 +244,69 @@ const MyFeedback = ({
                                         </form>
                                     </div>
                                 ) : (
-                                    /* Tampilan normal feedback */
-                                    <div className="space-y-4">
-                                        <div className="mb-4">
-                                            <p className="text-sm font-semibold mb-2" >Status:</p>
-                                            <StatusBadge status={feedback.disposisi?.status || 'diproses'} />
+                                    /* VIEW MODE */
+                                    <div className="space-y-5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-zinc-900 border border-white/10 px-4 py-3 rounded-xl w-full">
+                                                <p className="whitespace-pre-wrap leading-relaxed text-zinc-300 text-sm">
+                                                    {feedback.notes}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="bg-[#FDFCFB] border border-slate-200 p-4 rounded-xl shadow-sm">
-                                            <p className="whitespace-pre-wrap leading-relaxed" >{feedback.notes}</p>
-                                        </div>
-                                        {feedback.has_files && (
-                                            <div>
-                                                <div className="flex items-center mb-4">
-                                                    <Paperclip className="w-4 h-4 mr-2" />
-                                                    <p className="text-sm font-semibold" >
-                                                        Lampiran ({feedback.file_count} file)
-                                                    </p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
 
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                                                Status:
+                                                <div className="normal-case tracking-normal">
+                                                    <StatusBadge status={feedback.disposisi?.status || 'diproses'} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {feedback.has_files && (
+                                            <div className="space-y-3 pt-2 border-t border-white/5">
+                                                <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                                                    <Paperclip className="w-3.5 h-3.5" />
+                                                    Lampiran ({feedback.file_count})
+                                                </div>
+                                                
+                                                <div className="flex flex-wrap gap-3">
                                                     {feedback.files.map((file, index) => {
                                                         const isImage = isImageFile(file);
                                                         return (
                                                             <div
                                                                 key={file.id}
-                                                                className="relative cursor-pointer rounded-xl hover:scale-105 transition-all duration-300 shadow-sm border border-slate-200 overflow-hidden"
-                                                                onClick={() => {
-                                                                    if (isImage) {
-                                                                        setSelectedImage(file.url);
-                                                                    } else {
-                                                                        // Non-gambar: buka di tab baru
-                                                                        window.open(file.url, '_blank', 'noopener,noreferrer');
-                                                                    }
-                                                                }}
+                                                                onClick={() => isImage ? setSelectedImage(file.url) : window.open(file.url, '_blank', 'noopener,noreferrer')}
+                                                                className="relative group/file cursor-pointer w-20 h-20 rounded-xl overflow-hidden border border-white/10 bg-black/40 hover:border-white/30 transition-all duration-300"
                                                             >
-                                                                <div className="md:w-32 md:h-32 h-20 w-20 bg-white border-slate-200 shadow-lg flex items-center justify-center">
-                                                                    {isImage ? (
+                                                                {isImage ? (
+                                                                    <>
                                                                         <img
                                                                             src={file.url}
-                                                                            alt={`Thumbnail ${index + 1}`}
-                                                                            className="w-full h-full object-cover transition-transform duration-200 hover:scale-105"
+                                                                            alt={`File ${index + 1}`}
+                                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover/file:scale-110"
                                                                             onError={(e) => {
-                                                                                e.target.src = 'https://via.placeholder.com/160x160?text=No+Image';
-                                                                                e.target.className = "w-full h-full object-cover";
+                                                                                e.target.style.display = 'none';
+                                                                                e.target.nextSibling.style.display = 'flex';
                                                                             }}
                                                                         />
-                                                                    ) : (
-                                                                        <div className="text-teal-400 flex flex-col justify-center items-center">
-                                                                            <FileText className='w-9 h-9' />
-                                                                            <p className='text-[#D9534F] text-xs font-bold text-center break-words'>{file.filename.split('.').pop().toUpperCase()}</p>
-
+                                                                        <div className="hidden absolute inset-0 bg-zinc-900 flex items-center justify-center">
+                                                                            <ImageIcon className="w-6 h-6 text-zinc-600" />
                                                                         </div>
-                                                                    )}
-                                                                </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="w-full h-full flex flex-col items-center justify-center p-2 text-zinc-500 hover:text-white transition-colors">
+                                                                        <FileText className="w-6 h-6 mb-1" />
+                                                                        <span className="text-[9px] font-bold uppercase truncate max-w-full">
+                                                                            {file.filename.split('.').pop()}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {/* Hover Overlay */}
+                                                                <div className="absolute inset-0 bg-black/0 group-hover/file:bg-black/20 transition-colors" />
                                                             </div>
-                                                        )
+                                                        );
                                                     })}
                                                 </div>
                                             </div>
@@ -284,7 +319,7 @@ const MyFeedback = ({
                 </div>
             )}
         </div>
-    )
+    );
 }
 
-export default MyFeedback
+export default MyFeedback;

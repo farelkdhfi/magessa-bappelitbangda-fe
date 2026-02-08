@@ -19,9 +19,12 @@ import {
   Flag,
   Send,
   Save,
-  Clock
+  Clock,
+  Download,
+  ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '../../utils/api'; // Pastikan import ini ada sesuai struktur project Anda
 import LoadingSpinner from '../../components/Ui/LoadingSpinner';
 
 const StaffDisposisiDetail = () => {
@@ -58,6 +61,7 @@ const StaffDisposisiDetail = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
 
+  // === LOGIC START (DIPERTAHANKAN TOTAL) ===
   const fetchDisposisiDetail = async () => {
     try {
       setLoading(true);
@@ -110,7 +114,7 @@ const StaffDisposisiDetail = () => {
       });
       setEditingFeedbackId(feedbackId);
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setEditLoading(false);
     }
@@ -125,10 +129,10 @@ const StaffDisposisiDetail = () => {
         ...prev,
         status_dari_bawahan: 'diterima'
       }));
-      alert('Disposisi berhasil diterima!');
+      toast.success('Disposisi berhasil diterima!');
     } catch (err) {
       setAcceptError(err.message);
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setAcceptLoading(false);
     }
@@ -155,28 +159,21 @@ const StaffDisposisiDetail = () => {
       toast.success('PDF berhasil diunduh!');
     } catch (err) {
       console.error('Gagal mengunduh PDF:', err);
-      setDownloadError('Gagal mengunduh PDF. Silakan coba lagi.');
+      setDownloadError('Gagal mengunduh PDF.');
       toast.error('Gagal mengunduh PDF.');
     } finally {
       setDownloadLoading(false);
     }
   };
 
-  // Handler untuk feedback baru
   const handleFeedbackChange = (e) => {
     const { name, value } = e.target;
-    setFeedbackData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFeedbackData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    setFeedbackData(prev => ({
-      ...prev,
-      files: files.slice(0, 5)
-    }));
+    setFeedbackData(prev => ({ ...prev, files: files.slice(0, 5) }));
   };
 
   const handleFeedbackSubmit = async (e) => {
@@ -191,36 +188,29 @@ const StaffDisposisiDetail = () => {
       feedbackData.files.forEach(file => {
         formData.append('feedback_files', file);
       });
-      const response = await staffDisposisiService.submitFeedback(id, formData);
+      await staffDisposisiService.submitFeedback(id, formData);
       setFeedbackSuccess(true);
       setShowFeedbackForm(false);
       setFeedbackData({ notes: '', status: 'diproses', files: [] });
       fetchDisposisiDetail();
       fetchFeedbackForDisposisi();
-      alert('Feedback berhasil dikirim!');
+      toast.success('Feedback berhasil dikirim!');
     } catch (err) {
       setFeedbackError(err.message);
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setFeedbackLoading(false);
     }
   };
 
-  // Handler untuk edit feedback
   const handleEditFeedbackChange = (e) => {
     const { name, value } = e.target;
-    setEditFeedbackData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setEditFeedbackData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleEditFileChange = (e) => {
     const files = Array.from(e.target.files);
-    setEditFeedbackData(prev => ({
-      ...prev,
-      newFiles: files.slice(0, 5)
-    }));
+    setEditFeedbackData(prev => ({ ...prev, newFiles: files.slice(0, 5) }));
   };
 
   const handleRemoveExistingFile = (fileId) => {
@@ -246,7 +236,7 @@ const StaffDisposisiDetail = () => {
       editFeedbackData.removeFileIds.forEach(fileId => {
         formData.append('remove_file_ids', fileId);
       });
-      const response = await staffDisposisiService.updateFeedback(editingFeedbackId, formData);
+      await staffDisposisiService.updateFeedback(editingFeedbackId, formData);
       setEditingFeedbackId(null);
       setEditFeedbackData({
         notes: '',
@@ -257,10 +247,10 @@ const StaffDisposisiDetail = () => {
       });
       fetchDisposisiDetail();
       fetchFeedbackForDisposisi();
-      alert('Feedback berhasil diperbarui!');
+      toast.success('Feedback berhasil diperbarui!');
     } catch (err) {
       setFeedbackError(err.message);
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setEditLoading(false);
     }
@@ -282,58 +272,6 @@ const StaffDisposisiDetail = () => {
     window.open(imageUrl, '_blank');
   };
 
-  const getStatusConfig = (status) => {
-    const statusConfigs = {
-      'belum dibaca': {
-        bg: 'bg-red-100',
-        text: 'text-red-800',
-        border: 'border-red-200',
-        icon: AlertCircle,
-        label: 'Belum Dibaca'
-      },
-      'dibaca': {
-        bg: 'bg-yellow-100',
-        text: 'text-yellow-800',
-        border: 'border-yellow-200',
-        icon: Eye,
-        label: 'Sudah Dibaca'
-      },
-      'diterima': {
-        bg: 'bg-green-100',
-        text: 'text-green-800',
-        border: 'border-green-200',
-        icon: Check,
-        label: 'Diterima'
-      },
-      'diproses': {
-        bg: 'bg-blue-100',
-        text: 'text-blue-800',
-        border: 'border-blue-200',
-        icon: Cog,
-        label: 'Diproses'
-      },
-      'selesai': {
-        bg: 'bg-purple-100',
-        text: 'text-purple-800',
-        border: 'border-purple-200',
-        icon: Flag,
-        label: 'Selesai'
-      }
-    };
-    return statusConfigs[status] || statusConfigs['belum dibaca'];
-  };
-
-  const getStatusBadge = (status) => {
-    const config = getStatusConfig(status);
-    const IconComponent = config.icon;
-    return (
-      <div className={`inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold ${config.bg} ${config.text} border ${config.border} shadow-sm`}>
-        <IconComponent className="w-4 h-4 mr-2" />
-        {config.label}
-      </div>
-    );
-  };
-
   const canAcceptDisposisi = () => {
     return disposisi && disposisi.status_dari_bawahan === 'dibaca';
   };
@@ -345,694 +283,512 @@ const StaffDisposisiDetail = () => {
   };
 
   const formatDisplayDate = (dateString) => {
-    if (!dateString) return '-'
-    
-    // Coba parse ke date object
-    const date = new Date(dateString)
-    
-    // Jika hasilnya "Invalid Date" (karena inputnya "1 Januari 2025"),
-    // maka kembalikan string aslinya saja.
-    if (isNaN(date.getTime())) {
-      return dateString
-    }
-
-    // Jika valid date (format ISO YYYY-MM-DD), format ke Indo
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
     return date.toLocaleDateString('id-ID', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
-    })
-  }
+    });
+  };
+  // === LOGIC END ===
 
-  if (loading) {
+  // === STYLED COMPONENTS HELPERS ===
+  const getStatusBadge = (status) => {
+    const statusConfigs = {
+      'belum dibaca': { css: 'bg-red-500/10 text-red-400 border-red-500/20', icon: AlertCircle, label: 'Belum Dibaca' },
+      'dibaca': { css: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20', icon: Eye, label: 'Sudah Dibaca' },
+      'diterima': { css: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', icon: Check, label: 'Diterima' },
+      'diproses': { css: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: Cog, label: 'Diproses' },
+      'selesai': { css: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: Flag, label: 'Selesai' }
+    };
+    const config = statusConfigs[status] || statusConfigs['belum dibaca'];
+    const IconComponent = config.icon;
+    
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border ${config.css} backdrop-blur-md`}>
+        <IconComponent className="w-3.5 h-3.5" />
+        <span className="text-[10px] font-bold uppercase tracking-wide">{config.label}</span>
       </div>
     );
-  }
+  };
+
+  const InfoRow = ({ icon: Icon, label, value }) => (
+    <div className="bg-black/20 rounded-2xl p-4 border border-white/5 hover:border-white/10 transition-colors">
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className="w-3.5 h-3.5 text-zinc-500" />
+        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{label}</p>
+      </div>
+      <p className="text-white font-medium pl-6">{value || '-'}</p>
+    </div>
+  );
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-teal-400" />
-          <h3 className="text-lg font-bold mb-2">Error</h3>
-          <p className="mb-4">{error}</p>
-          <button
-            onClick={fetchDisposisiDetail}
-            className="bg-black text-white px-4 py-2.5 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg border border-slate-200"
-          >
-            Coba Lagi
-          </button>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-zinc-900 border border-red-500/20 rounded-3xl p-8 max-w-md w-full text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-light text-white mb-2">Terjadi Kesalahan</h3>
+          <p className="text-zinc-500 mb-6">{error}</p>
+          <button onClick={fetchDisposisiDetail} className="w-full px-4 py-3 bg-white text-black hover:bg-zinc-200 rounded-2xl font-bold transition-all">Coba Lagi</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="">
-        {/* Header Section */}
-        <div className="mb-4 bg-white shadow-lg md:p-5 p-3 rounded-2xl">
-          <button
-            onClick={() => navigate(-1)}
-            className="group inline-flex items-center mb-3"
+    <div className="min-h-screen text-white font-sans selection:bg-white/20 pb-20">
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
+
+        {/* 1. Header Section */}
+        <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="group flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors text-sm font-medium"
           >
-            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-semibold">Kembali</span>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Kembali
           </button>
-          <div className="px-4 mb-4">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
-              <div className="flex-1">
-                <h1 className="md:text-lg text-lg font-bold">Detail Disposisi</h1>
-                <p className="text-sm font-medium mt-1">Kelola dan berikan feedback terhadap disposisi yang diterima</p>
-                <button
+
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+            <div className="space-y-4 max-w-2xl">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-light tracking-tight text-white mb-2">
+                  Detail <span className="font-semibold text-zinc-500">Disposisi</span>
+                </h1>
+                <p className="text-zinc-400 text-sm leading-relaxed">
+                  Kelola dan berikan feedback terhadap instruksi yang diberikan pimpinan.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                 <button
                   onClick={handleDownloadPDF}
                   disabled={downloadLoading}
-                  className={`group inline-flex mt-2 items-center px-6 py-3 shadow-lg rounded-xl font-medium transition-all duration-200 border border-slate-200 shadow-sm${downloadLoading
-                    ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-black opacity-75 cursor-not-allowed'
-                    : 'bg-gradient-to-br from-gray-500 to-gray-700 hover:from-gray-700 hover:to-gray-900 text-black hover:shadow-md hover:-translate-y-0.5'
-                    }`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-800 border border-white/5 text-zinc-300 hover:text-white hover:bg-zinc-700 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {downloadLoading ? (
-                    <>
-                      <div className="w-5 h-5 mr-2 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                      Mengunduh...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                      Download Lembar Disposisi
-                    </>
-                  )}
+                  {downloadLoading ? <LoadingSpinner size="sm" /> : <Download className="w-4 h-4" />}
+                  Download Lembar Disposisi
                 </button>
               </div>
-              {disposisi && (
-                <div className="flex flex-col items-center md:items-end space-y-4">
-                  {getStatusBadge(disposisi.status_dari_bawahan)}
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {canAcceptDisposisi() && (
-                      <button
-                        onClick={handleAcceptDisposisi}
-                        disabled={acceptLoading}
-                        className={`
-                          group inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 border border-slate-200 shadow-sm
-                          ${acceptLoading
-                            ? 'bg-black text-white opacity-75 cursor-not-allowed'
-                            : 'bg-black text-white hover:shadow-md hover:-translate-y-0.5'
-                          }
-                        `}
-                      >
-                        {acceptLoading ? (
-                          <>
-                            <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Memproses...
-                          </>
-                        ) : (
-                          <>
-                            <Check className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                            Terima Disposisi
-                          </>
-                        )}
-                      </button>
-                    )}
-                    {canGiveFeedback() && !showFeedbackForm && !editingFeedbackId && (
-                      <button
-                        onClick={() => setShowFeedbackForm(true)}
-                        className="group inline-flex items-center px-6 py-3 rounded-xl bg-black text-white font-semibold hover:shadow-md hover:-translate-y-0.5 shadow-sm transition-all duration-200 border border-slate-200"
-                      >
-                        <MessageSquare className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                        Beri Feedback
-                      </button>
-                    )}
-                  </div>
-                  {acceptError && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl shadow-sm">
-                      <div className="flex items-center">
-                        <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                        <span className="font-medium">{acceptError}</span>
-                      </div>
-                    </div>
+            </div>
+
+            {disposisi && (
+              <div className="flex flex-col items-start lg:items-end gap-4">
+                {getStatusBadge(disposisi.status_dari_bawahan)}
+                
+                <div className="flex flex-wrap gap-3">
+                  {canAcceptDisposisi() && (
+                    <button
+                      onClick={handleAcceptDisposisi}
+                      disabled={acceptLoading}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black hover:bg-zinc-200 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-white/5 disabled:opacity-50"
+                    >
+                      {acceptLoading ? <LoadingSpinner size="sm" color="text-black" /> : <Check className="w-4 h-4" />}
+                      Terima Disposisi
+                    </button>
+                  )}
+                  
+                  {canGiveFeedback() && !showFeedbackForm && !editingFeedbackId && (
+                    <button
+                      onClick={() => setShowFeedbackForm(true)}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black hover:bg-zinc-200 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-white/5"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Beri Feedback
+                    </button>
                   )}
                 </div>
-              )}
-            </div>
+
+                {acceptError && (
+                   <p className="text-red-400 text-xs flex items-center gap-1 mt-1">
+                     <AlertCircle className="w-3 h-3" /> {acceptError}
+                   </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* 2. Content Grid */}
         {disposisi && (
-          <div className="space-y-8">
+          <div className="space-y-6">
+            
             {/* Form Feedback */}
             {showFeedbackForm && !editingFeedbackId && (
-              <div className="bg-gradient-to-br from-[#FDFCFB] via-white to-[#EDE6E3] rounded-2xl shadow-md border-2 border-slate-200 p-3 md:p-6">
-                <div className="flex items-center mb-4">
-                  <div className="p-3 bg-white rounded-xl shadow-lg mr-1">
-                    <MessageSquare className="w-6 h-6 text-teal-400" />
+              <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-zinc-800 rounded-2xl border border-white/5">
+                    <MessageSquare className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Beri Feedback</h3>
-                    <p className="text-sm font-medium">Berikan tanggapan dan update status disposisi</p>
+                    <h3 className="text-xl font-light text-white">Input Feedback</h3>
+                    <p className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Respon Disposisi</p>
                   </div>
                 </div>
-                {feedbackError && (
-                  <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl shadow-sm">
-                    <div className="flex items-center">
-                      <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                      <span className="font-medium">{feedbackError}</span>
+
+                <form onSubmit={handleFeedbackSubmit} className="space-y-6 max-w-4xl">
+                  {feedbackError && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" /> {feedbackError}
                     </div>
-                  </div>
-                )}
-                <form onSubmit={handleFeedbackSubmit} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-semibold mb-3">
-                      Catatan Feedback *
-                    </label>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Catatan Feedback</label>
                     <textarea
                       name="notes"
                       value={feedbackData.notes}
                       onChange={handleFeedbackChange}
                       required
                       rows="5"
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 resize-none text-[#2E2A27] shadow-sm"
-                      placeholder="Masukkan catatan feedback Anda..."
+                      className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 transition-all resize-none"
+                      placeholder="Tuliskan laporan progres atau hasil pengerjaan..."
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-3">
-                      Status Disposisi *
-                    </label>
-                    <div className="flex gap-2">
-                      <label className="flex items-center cursor-pointer group">
-                        <input
-                          type="radio"
-                          name="status"
-                          value="diproses"
-                          checked={feedbackData.status === 'diproses'}
-                          onChange={handleFeedbackChange}
-                          className="w-4 h-4 text-black border-slate-200 focus:ring-teal-400"
-                        />
-                        <span className="ml-3 font-medium">Diproses</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer group">
-                        <input
-                          type="radio"
-                          name="status"
-                          value="selesai"
-                          checked={feedbackData.status === 'selesai'}
-                          onChange={handleFeedbackChange}
-                          className="w-4 h-4 text-black border-slate-200 focus:ring-teal-400"
-                        />
-                        <span className="ml-3 font-medium">Selesai</span>
-                      </label>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Update Status</label>
+                    <div className="flex gap-4">
+                      {['diproses', 'selesai'].map((statusOption) => (
+                        <label key={statusOption} className="group cursor-pointer">
+                          <input
+                            type="radio"
+                            name="status"
+                            value={statusOption}
+                            checked={feedbackData.status === statusOption}
+                            onChange={handleFeedbackChange}
+                            className="hidden"
+                          />
+                          <div className={`px-4 py-2 rounded-xl border transition-all text-sm font-medium capitalize flex items-center gap-2
+                            ${feedbackData.status === statusOption 
+                              ? 'bg-white text-black border-white' 
+                              : 'bg-zinc-900 text-zinc-500 border-white/5 group-hover:border-white/20'}`}>
+                            <div className={`w-2 h-2 rounded-full ${feedbackData.status === statusOption ? 'bg-black' : 'bg-zinc-700'}`} />
+                            {statusOption}
+                          </div>
+                        </label>
+                      ))}
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-3">
-                      Lampiran File (maks. 5 file)
-                    </label>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                      accept="image/*,application/pdf"
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 shadow-sm"
-                    />
-                    {feedbackData.files.length > 0 && (
-                      <div className="mt-2 text-sm bg-[#FDFCFB] px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
-                        <Paperclip className="w-4 h-4 inline mr-2" />
-                        {feedbackData.files.length} file dipilih
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Lampiran File</label>
+                    <div className="relative group">
+                       <input
+                        type="file"
+                        multiple
+                        onChange={handleFileChange}
+                        accept="image/*,application/pdf"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <div className="w-full bg-black/20 border border-white/10 border-dashed rounded-2xl p-4 text-center group-hover:bg-black/30 group-hover:border-white/30 transition-all">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                           <Paperclip className="w-5 h-5 text-zinc-500" />
+                           <p className="text-sm text-zinc-400">
+                             {feedbackData.files.length > 0 
+                               ? `${feedbackData.files.length} file dipilih` 
+                               : 'Klik untuk upload (Max 5 file)'}
+                           </p>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
-                  <div className="flex justify-end space-x-4 pt-4">
+
+                  <div className="flex gap-3 pt-4">
                     <button
                       type="button"
                       onClick={() => setShowFeedbackForm(false)}
-                      className="px-6 py-3 border border-slate-200 rounded-xl text-[#2E2A27] hover:bg-[#FDFCFB] font-semibold transition-colors shadow-sm"
+                      className="px-6 py-3 bg-transparent text-zinc-400 hover:text-white rounded-2xl font-medium transition-colors"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
                       disabled={feedbackLoading}
-                      className={`
-                        group inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 border border-slate-200 shadow-sm
-                        ${feedbackLoading
-                          ? 'bg-black text-white opacity-75 cursor-not-allowed'
-                          : 'bg-black text-white hover:shadow-md hover:-translate-y-0.5'
-                        }
-                      `}
+                      className="px-6 py-3 bg-white text-black hover:bg-zinc-200 rounded-2xl font-bold transition-all shadow-lg shadow-white/5 flex items-center gap-2"
                     >
-                      {feedbackLoading ? (
-                        <>
-                          <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Mengirim...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                          Kirim Feedback
-                        </>
-                      )}
+                      {feedbackLoading ? <LoadingSpinner size="sm" color="text-black" /> : <Send className="w-4 h-4" />}
+                      Kirim Feedback
                     </button>
                   </div>
                 </form>
               </div>
             )}
 
-            {/* Informasi Surat dan Disposisi */}
-            <div className="bg-gradient-to-br from-[#FDFCFB] via-white to-[#EDE6E3] rounded-2xl shadow-md border-2 border-slate-200 p-2 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* Informasi Surat */}
-                <div>
-                  <div className="flex items-center mb-4">
-                    <div className="p-3 bg-white rounded-xl shadow-lg mr-1">
-                      <FileText className="w-6 h-6 text-teal-400" />
-                    </div>
-                    <h3 className="font-semibold">Informasi Surat</h3>
+            {/* Info Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Left Column: Surat Info */}
+              <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-zinc-800 rounded-xl border border-white/5">
+                    <FileText className="w-5 h-5 text-white" />
                   </div>
-                  <div className="space-y-4">
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <Building className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Nomor Surat</p>
-                      </div>
-                      <p className="font-semibold">{disposisi.nomor_surat || '-'}</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <Building className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Asal Instansi</p>
-                      </div>
-                      <p className="font-semibold">{disposisi.asal_instansi || '-'}</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Tanggal Surat</p>
-                      </div>
-                      <p className="font-semibold">
-                        {formatDisplayDate(disposisi.tanggal_surat)}
-                      </p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Diterima Tanggal</p>
-                      </div>
-                      <p className="font-semibold">
-                        {formatDisplayDate(disposisi.diterima_tanggal)}
-                      </p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <FileText className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Nomor Agenda</p>
-                      </div>
-                      <p className="font-semibold">{disposisi.nomor_agenda || '-'}</p>
-                    </div>
-                  </div>
+                  <h3 className="text-lg font-medium text-white">Informasi Surat</h3>
                 </div>
-
-                {/* Informasi Disposisi */}
-                <div>
-                  <div className="flex items-center mb-4">
-                    <div className="p-3 bg-white rounded-xl shadow-lg mr-1">
-                      <MessageSquare className="w-6 h-6 text-teal-400" />
-                    </div>
-                    <h3 className="font-semibold">Informasi Disposisi</h3>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <p className="text-sm font-semibold mb-2">Status</p>
-                      <div className="inline-block">
-                        {getStatusBadge(disposisi.status_dari_bawahan)}
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Sifat</p>
-                      </div>
-                      <p className="font-semibold">{disposisi.sifat || '-'}</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <User className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Dari Jabatan</p>
-                      </div>
-                      <p className="font-semibold">{disposisi.disposisi_kepada_jabatan}</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <User className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Diteruskan Kepada</p>
-                      </div>
-                      <p className="font-semibold">{disposisi.diteruskan_kepada_nama || disposisi.diteruskan_kepada_jabatan}</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                      <div className="flex items-center mb-2">
-                        <Clock className="w-4 h-4 mr-2" />
-                        <p className="text-sm font-semibold">Tanggal Disposisi</p>
-                      </div>
-                      <p className="font-semibold">{new Date(disposisi.created_at).toLocaleString('id-ID')}</p>
-                    </div>
-                  </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <InfoRow icon={Building} label="Nomor Surat" value={disposisi.nomor_surat} />
+                   <InfoRow icon={Building} label="Asal Instansi" value={disposisi.asal_instansi} />
+                   <InfoRow icon={Calendar} label="Tanggal Surat" value={formatDisplayDate(disposisi.tanggal_surat)} />
+                   <InfoRow icon={Calendar} label="Diterima Tanggal" value={formatDisplayDate(disposisi.diterima_tanggal)} />
+                   <InfoRow icon={FileText} label="No Agenda" value={disposisi.nomor_agenda} />
                 </div>
               </div>
 
-              {/* Content Sections */}
-              <div className="mt-8 space-y-6">
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                  <h4 className="font-semibold mb-4 flex items-center">
-                    <MessageSquare className="w-5 h-5 mr-3" />
-                    Dengan hormat harap:
-                  </h4>
-                  <div className="bg-[#FDFCFB] border border-slate-200 p-4 rounded-lg shadow-sm">
-                    <p className="whitespace-pre-wrap leading-relaxed">
-                      {disposisi.dengan_hormat_harap}
-                    </p>
+              {/* Right Column: Disposisi Info */}
+              <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-zinc-800 rounded-xl border border-white/5">
+                    <MessageSquare className="w-5 h-5 text-white" />
                   </div>
+                  <h3 className="text-lg font-medium text-white">Detail Disposisi</h3>
                 </div>
-                {disposisi.catatan && (
-                  <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                    <h4 className="font-semibold mb-4 flex items-center">
-                      <User className="w-5 h-5 mr-3" />
-                      Catatan dari Kepala
-                    </h4>
-                    <div className="bg-[#FDFCFB] border border-slate-200 p-4 rounded-lg shadow-sm">
-                      <p className="leading-relaxed">{disposisi.catatan}</p>
-                    </div>
-                  </div>
-                )}
-                {disposisi.catatan_kabid && (
-                  <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                    <h4 className="font-semibold mb-4 flex items-center">
-                      <User className="w-5 h-5 mr-3" />
-                      Keterangan dari Kabid
-                    </h4>
-                    <div className="bg-[#FDFCFB] border border-slate-200 p-4 rounded-lg shadow-sm">
-                      <p className="leading-relaxed">{disposisi.catatan_kabid}</p>
-                    </div>
-                  </div>
-                )}
-                {disposisi.surat_masuk?.has_photos && (
-                  <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                    <div className="flex items-center mb-4">
-                      <FileText className="w-6 h-6 mr-3" />
-                      <h3 className="font-semibold">Lampiran</h3>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {disposisi.surat_masuk.photos.map((photo, index) => {
-                        // ✅ TAMBAHKAN LOGIKA DETEKSI TIPE FILE INI
-                        const type = photo.type?.toLowerCase() || photo.filename?.split('.').pop()?.toLowerCase();
-                        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(type);
 
-                        return (
-                          <div
-                            key={photo.id}
-                            className="relative rounded-xl overflow-hidden cursor-pointer border border-slate-200 hover:scale-105 transition-all duration-300 shadow-sm"
-                            onClick={() => openImageModal(photo.url)} // ← Tetap buka di tab baru, karena tidak ada modal fullscreen di sini
-                          >
-                            <div className="w-32 h-32 flex items-center justify-center bg-gray-50">
-                              {isImage ? (
-                                <img
-                                  src={photo.url}
-                                  alt={`Surat foto ${index + 1}`}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                  onError={(e) => {
-                                    e.target.src = 'https://via.placeholder.com/128x128?text=No+Image';
-                                  }}
-                                />
-                              ) : (
-                                <div className="text-[#D9534F] flex flex-col items-center justify-center">
-                                  <FileText className="w-8 h-8" />
-                                  <p className="text-xs font-bold mt-1 text-center break-words">
-                                    {photo.filename.split('.').pop()?.toUpperCase()}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <InfoRow icon={AlertCircle} label="Sifat" value={disposisi.sifat} />
+                     <div className="bg-black/20 rounded-2xl p-4 border border-white/5">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Cog className="w-3.5 h-3.5 text-zinc-500" />
+                          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Status</p>
+                        </div>
+                        <div className="mt-1">{getStatusBadge(disposisi.status_dari_bawahan)}</div>
+                     </div>
                   </div>
-                )}
+                  <InfoRow icon={User} label="Dari Jabatan" value={disposisi.disposisi_kepada_jabatan} />
+                  <InfoRow icon={User} label="Diteruskan Kepada" value={disposisi.diteruskan_kepada_nama || disposisi.diteruskan_kepada_jabatan} />
+                  <InfoRow icon={Clock} label="Tgl Disposisi" value={new Date(disposisi.created_at).toLocaleString('id-ID')} />
+                </div>
               </div>
             </div>
 
-            {/* Feedback yang Telah Dikirim */}
-            {feedbackList.length > 0 && (
-              <div className="bg-gradient-to-br from-[#FDFCFB] via-white to-[#EDE6E3] rounded-2xl shadow-md border-2 border-slate-200 p-2 md:p-6">
-                <div className="flex items-center mb-4">
-                  <div className="p-3 bg-white rounded-xl shadow-md mr-3">
-                    <MessageSquare className="w-6 h-6 text-teal-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Feedback yang Telah Dikirim</h3>
-                    <p className="text-sm font-medium">Riwayat tanggapan yang telah Anda berikan</p>
-                  </div>
+            {/* Isi Disposisi & Catatan */}
+            <div className="grid grid-cols-1 gap-6">
+              <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+                 <h4 className="flex items-center gap-2 text-zinc-400 font-medium mb-4">
+                    <MessageSquare className="w-4 h-4" />
+                    Dengan hormat harap:
+                 </h4>
+                 <div className="bg-black/20 border border-white/5 p-6 rounded-2xl text-white leading-relaxed whitespace-pre-wrap">
+                    {disposisi.dengan_hormat_harap}
+                 </div>
+              </div>
+
+              {disposisi.catatan && (
+                <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+                   <h4 className="flex items-center gap-2 text-zinc-400 font-medium mb-4">
+                      <User className="w-4 h-4" />
+                      Catatan dari Kepala
+                   </h4>
+                   <div className="bg-black/20 border border-white/5 p-6 rounded-2xl text-zinc-300 leading-relaxed">
+                      {disposisi.catatan}
+                   </div>
                 </div>
-                <div className="space-y-6">
-                  {feedbackList.map((feedback) => (
-                    <div key={feedback.id} className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                      {/* Header Feedback */}
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-4">
-                        <div className="space-y-2">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
-                            <div className="flex items-center">
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Dibuat: {new Date(feedback.created_at).toLocaleString('id-ID', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                timeZone: 'Asia/Jakarta'
-                              })}
-                            </div>
-                            {feedback.updated_at && feedback.updated_at !== feedback.created_at && (
-                              <div className="flex items-center bg-[#FDFCFB] text-[#6D4C41] px-3 py-1 rounded-lg border border-slate-200">
-                                <Clock className="w-3 h-3 mr-1" />
-                                Diperbarui: {new Date(feedback.updated_at).toLocaleString('id-ID', {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  timeZone: 'Asia/Jakarta'
-                                })}
-                              </div>
-                            )}
+              )}
+
+              {disposisi.catatan_kabid && (
+                <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+                   <h4 className="flex items-center gap-2 text-zinc-400 font-medium mb-4">
+                      <User className="w-4 h-4" />
+                      Keterangan dari Kabid
+                   </h4>
+                   <div className="bg-black/20 border border-white/5 p-6 rounded-2xl text-zinc-300 leading-relaxed">
+                      {disposisi.catatan_kabid}
+                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Lampiran Foto */}
+            {disposisi.surat_masuk?.has_photos && (
+              <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <FileText className="w-5 h-5 text-zinc-400" />
+                  <h3 className="text-lg font-medium text-white">Lampiran Surat</h3>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  {disposisi.surat_masuk.photos.map((photo, index) => {
+                    const type = photo.type?.toLowerCase() || photo.filename?.split('.').pop()?.toLowerCase();
+                    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(type);
+
+                    return (
+                      <div
+                        key={photo.id}
+                        className="relative group rounded-2xl overflow-hidden cursor-pointer border border-white/10 hover:border-white/30 transition-all duration-300 w-32 h-32"
+                        onClick={() => openImageModal(photo.url)}
+                      >
+                         {isImage ? (
+                          <img
+                            src={photo.url}
+                            alt={`Surat foto ${index + 1}`}
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                            loading="lazy"
+                            onError={(e) => { e.target.src = 'https://via.placeholder.com/128x128?text=Error'; }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-800 text-zinc-500 group-hover:text-white transition-colors">
+                            <FileText className="w-8 h-8 mb-2" />
+                            <span className="text-[10px] font-bold uppercase">{type}</span>
                           </div>
-                        </div>
-                        {!editingFeedbackId && !showFeedbackForm && (
-                          <button
-                            onClick={() => fetchFeedbackForEdit(feedback.id)}
-                            disabled={editLoading}
-                            className="group inline-flex items-center px-4 py-2 bg-black text-white rounded-xl transition-all duration-200 hover:shadow-md border border-slate-200"
-                            title="Edit Feedback"
-                          >
-                            {editLoading ? (
-                              <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <Edit className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                            )}
-                            <span className="font-semibold">Edit</span>
-                          </button>
                         )}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <Eye className="w-6 h-6 text-white" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Riwayat Feedback */}
+            {feedbackList.length > 0 && (
+              <div className="space-y-6 mt-10">
+                <div className="flex items-center gap-3 px-2">
+                   <div className="w-10 h-1 rounded-full bg-zinc-800"></div>
+                   <h3 className="text-xl font-light text-white">Riwayat Feedback</h3>
+                </div>
+                
+                {feedbackList.map((feedback) => (
+                  <div key={feedback.id} className={`bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 transition-all duration-300 ${editingFeedbackId === feedback.id ? 'ring-1 ring-white/20' : 'hover:bg-zinc-900/50'}`}>
+                    
+                    {/* Header Feedback Item */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-xs text-zinc-500">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>{new Date(feedback.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}</span>
+                        </div>
+                         {feedback.updated_at && feedback.updated_at !== feedback.created_at && (
+                            <div className="flex items-center gap-2 text-xs text-zinc-600">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>Diperbarui: {new Date(feedback.updated_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                            </div>
+                         )}
                       </div>
 
-                      {/* Jika sedang dalam mode edit untuk feedback ini */}
-                      {editingFeedbackId === feedback.id ? (
-                        <div className="space-y-6">
-                          {feedbackError && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl shadow-sm">
-                              <div className="flex items-center">
-                                <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                                <span className="font-medium">{feedbackError}</span>
-                              </div>
-                            </div>
-                          )}
-                          <form onSubmit={handleEditFeedbackSubmit} className="space-y-6">
-                            <div>
-                              <label className="block text-sm font-semibold mb-3">
-                                Catatan Feedback *
-                              </label>
-                              <textarea
-                                name="notes"
-                                value={editFeedbackData.notes}
-                                onChange={handleEditFeedbackChange}
-                                required
-                                rows="5"
-                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 resize-none text-[#2E2A27] shadow-sm"
-                                placeholder="Masukkan catatan feedback Anda..."
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-semibold mb-3">
-                                Status Disposisi *
-                              </label>
-                              <div className="flex gap-2">
-                                <label className="flex items-center cursor-pointer group">
-                                  <input
-                                    type="radio"
-                                    name="status"
-                                    value="diproses"
-                                    checked={editFeedbackData.status === 'diproses'}
-                                    onChange={handleEditFeedbackChange}
-                                    className="w-4 h-4 text-black border-slate-200 focus:ring-teal-400"
-                                  />
-                                  <span className="ml-3 font-medium">Diproses</span>
-                                </label>
-                                <label className="flex items-center cursor-pointer group">
-                                  <input
-                                    type="radio"
-                                    name="status"
-                                    value="selesai"
-                                    checked={editFeedbackData.status === 'selesai'}
-                                    onChange={handleEditFeedbackChange}
-                                    className="w-4 h-4 text-black border-slate-200 focus:ring-teal-400"
-                                  />
-                                  <span className="ml-3 font-medium">Selesai</span>
-                                </label>
-                              </div>
-                            </div>
-
-                            {/* File yang sudah ada */}
-                            {editFeedbackData.existingFiles.length > 0 && (
-                              <div>
-                                <label className="block text-sm font-semibold mb-3">
-                                  File yang sudah ada
-                                </label>
-                                <div className="space-y-3">
-                                  {editFeedbackData.existingFiles.map((file) => (
-                                    <div key={file.id} className="flex items-center justify-between bg-[#FDFCFB] p-4 rounded-xl border border-slate-200 shadow-sm">
-                                      <div className="flex items-center">
-                                        <div className="p-2 bg-slate-600 rounded-lg mr-3">
-                                          <FileText className="w-4 h-4 text-white" />
-                                        </div>
-                                        <span className="font-medium">{file.filename}</span>
-                                      </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveExistingFile(file.id)}
-                                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            <div>
-                              <label className="block text-sm font-semibold mb-3">
-                                Tambah File Baru (maks. 5 file)
-                              </label>
-                              <input
-                                type="file"
-                                multiple
-                                onChange={handleEditFileChange}
-                                accept="image/*,application/pdf"
-                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 shadow-sm"
-                              />
-                              {editFeedbackData.newFiles.length > 0 && (
-                                <div className="mt-2 text-sm bg-green-50 px-3 py-2 rounded-lg border border-green-200 shadow-sm">
-                                  <Paperclip className="w-4 h-4 inline mr-2" />
-                                  {editFeedbackData.newFiles.length} file baru dipilih
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex justify-end space-x-4 pt-4 border-t border-slate-200">
-                              <button
-                                type="button"
-                                onClick={cancelEditFeedback}
-                                className="px-6 py-3 border border-slate-200 rounded-xl text-[#2E2A27] hover:bg-[#FDFCFB] font-semibold transition-colors shadow-sm flex items-center"
-                              >
-                                <X className="w-4 h-4 inline mr-2" />
-                                Batal
-                              </button>
-                              <button
-                                type="submit"
-                                disabled={editLoading}
-                                className={`
-                                  group inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 border border-slate-200 shadow-sm
-                                  ${editLoading
-                                    ? 'bg-black text-white opacity-75 cursor-not-allowed'
-                                    : 'bg-black text-white hover:shadow-md hover:-translate-y-0.5'
-                                  }
-                                `}
-                              >
-                                {editLoading ? (
-                                  <>
-                                    <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Memperbarui...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Save className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                                    Perbarui Feedback
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      ) : (
-                        /* Tampilan normal feedback */
-                        <div className="space-y-4">
-                          <div className="mb-4">
-                            <p className="text-sm font-semibold mb-2">Status:</p>
-                            {getStatusBadge(feedback.disposisi?.status_dari_bawahan || 'diproses')}
-                          </div>
-                          <div className="bg-[#FDFCFB] border border-slate-200 p-4 rounded-xl shadow-sm">
-                            <p className="whitespace-pre-wrap leading-relaxed">{feedback.notes}</p>
-                          </div>
-                          {feedback.has_files && (
-                            <div>
-                              <div className="flex items-center mb-4">
-                                <Paperclip className="w-4 h-4 mr-2" />
-                                <p className="text-sm font-semibold">
-                                  Lampiran ({feedback.file_count} file)
-                                </p>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {feedback.files.map((file) => (
-                                  <div key={file.id} className="relative cursor-pointer rounded-xl hover:scale-105 transition-all duration-300 shadow-sm border border-slate-200 overflow-hidden">
-                                    <button
-                                      onClick={() => openImageModal(file.url)}
-                                      className="w-32 h-32 cursor-pointer"
-                                    >
-                                      {file.type && file.type.startsWith('image/') ? (
-                                        <img
-                                          src={file.url}
-                                          alt={file.filename}
-                                          className="w-32 h-32 object-cover"
-                                          loading="lazy"
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#FDFCFB]">
-                                          <FileText className="w-8 h-8 text-[#D9534F]" />
-                                          <p className='text-[#D9534F] font-bold'>PDF</p>
-                                        </div>
-                                      )}
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                      {!editingFeedbackId && !showFeedbackForm && (
+                        <button
+                          onClick={() => fetchFeedbackForEdit(feedback.id)}
+                          className="p-2 rounded-xl bg-black/20 text-zinc-400 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/5"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
-                  ))}
-                </div>
+
+                    {/* Mode Edit */}
+                    {editingFeedbackId === feedback.id ? (
+                      <form onSubmit={handleEditFeedbackSubmit} className="space-y-6">
+                        {feedbackError && (
+                          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+                            {feedbackError}
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Edit Catatan</label>
+                           <textarea
+                            name="notes"
+                            value={editFeedbackData.notes}
+                            onChange={handleEditFeedbackChange}
+                            required
+                            rows="4"
+                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-white/30"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Edit Status</label>
+                          <div className="flex gap-4">
+                            {['diproses', 'selesai'].map((statusOption) => (
+                              <label key={statusOption} className="group cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="status"
+                                  value={statusOption}
+                                  checked={editFeedbackData.status === statusOption}
+                                  onChange={handleEditFeedbackChange}
+                                  className="hidden"
+                                />
+                                <div className={`px-4 py-2 rounded-xl border transition-all text-sm font-medium capitalize flex items-center gap-2
+                                  ${editFeedbackData.status === statusOption 
+                                    ? 'bg-white text-black border-white' 
+                                    : 'bg-zinc-800 text-zinc-500 border-white/5'}`}>
+                                  {statusOption}
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* File Handling Logic for Edit (Simplified UI for brevity but fully functional) */}
+                        {editFeedbackData.existingFiles.length > 0 && (
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">File Tersimpan</label>
+                            <div className="space-y-2">
+                               {editFeedbackData.existingFiles.map((file) => (
+                                 <div key={file.id} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                                    <span className="text-sm text-zinc-300 truncate max-w-[200px]">{file.filename}</span>
+                                    <button type="button" onClick={() => handleRemoveExistingFile(file.id)} className="text-red-400 hover:text-red-300 text-xs">
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                 </div>
+                               ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Tambah File Baru</label>
+                           <input type="file" multiple onChange={handleEditFileChange} className="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700"/>
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+                          <button type="button" onClick={cancelEditFeedback} className="px-4 py-2 text-sm text-zinc-500 hover:text-white">Batal</button>
+                          <button type="submit" disabled={editLoading} className="px-6 py-2 bg-white text-black rounded-xl text-sm font-bold hover:bg-zinc-200">
+                             {editLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      /* Mode Tampilan Normal */
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                           {getStatusBadge(feedback.disposisi?.status_dari_bawahan || 'diproses')}
+                        </div>
+                        <div className="text-zinc-300 leading-relaxed whitespace-pre-wrap text-sm">
+                          {feedback.notes}
+                        </div>
+                        
+                        {feedback.has_files && (
+                          <div className="pt-4 border-t border-white/5">
+                            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Lampiran ({feedback.file_count})</p>
+                            <div className="flex flex-wrap gap-3">
+                              {feedback.files.map((file) => (
+                                <button
+                                  key={file.id}
+                                  onClick={() => openImageModal(file.url)}
+                                  className="group relative flex items-center justify-center w-20 h-20 bg-black/20 rounded-xl border border-white/10 overflow-hidden hover:border-white/30 transition-all"
+                                >
+                                   {file.type && file.type.startsWith('image/') ? (
+                                      <img src={file.url} alt="file" className="w-full h-full object-cover opacity-70 group-hover:opacity-100" />
+                                   ) : (
+                                      <FileText className="w-6 h-6 text-zinc-500 group-hover:text-white" />
+                                   )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>

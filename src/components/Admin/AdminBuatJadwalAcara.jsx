@@ -1,8 +1,8 @@
-import { Calendar, X } from 'lucide-react';
+import { Calendar, X, MapPin, Clock, AlignLeft, Hash, Users, Flag, Search, CheckCircle } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
-import Skeleton from '../Ui/Skeleton';
+import InputField from '../InputField';
 
-// ✅ Helper: cek apakah waktu mulai di masa lalu
+// Logic Validasi tetap dipertahankan
 const isPastDateTime = (tanggal, waktu) => {
   if (!tanggal || !waktu) return false;
   const inputDateTime = new Date(`${tanggal}T${waktu}:00+07:00`);
@@ -10,7 +10,6 @@ const isPastDateTime = (tanggal, waktu) => {
   return inputDateTime < now;
 };
 
-// ✅ Helper: cek apakah waktu selesai <= waktu mulai
 const isInvalidEndTime = (tanggalMulai, waktuMulai, tanggalSelesai, waktuSelesai) => {
   if (!tanggalMulai || !waktuMulai || !tanggalSelesai || !waktuSelesai) return false;
   const start = new Date(`${tanggalMulai}T${waktuMulai}:00+07:00`);
@@ -34,368 +33,351 @@ const AdminBuatJadwalAcara = ({
   const waktuMulaiRef = useRef(null);
   const waktuSelesaiRef = useRef(null);
 
-  // Auto-focus jika error waktu mulai
+  // Auto-focus logic
   useEffect(() => {
     if (formData.tanggal_mulai && formData.waktu_mulai && isPastDateTime(formData.tanggal_mulai, formData.waktu_mulai)) {
       waktuMulaiRef.current?.focus();
     }
   }, [formData.tanggal_mulai, formData.waktu_mulai]);
 
-  // Auto-focus jika error waktu selesai
   useEffect(() => {
     if (isInvalidEndTime(formData.tanggal_mulai, formData.waktu_mulai, formData.tanggal_selesai, formData.waktu_selesai)) {
       waktuSelesaiRef.current?.focus();
     }
   }, [formData.tanggal_selesai, formData.waktu_selesai]);
 
-  // ✅ State validasi
   const hasPastTimeError = formData.tanggal_mulai && formData.waktu_mulai && isPastDateTime(formData.tanggal_mulai, formData.waktu_mulai);
   const hasInvalidEndTimeError = isInvalidEndTime(formData.tanggal_mulai, formData.waktu_mulai, formData.tanggal_selesai, formData.waktu_selesai);
-  const hasAnyError = hasPastTimeError || hasInvalidEndTimeError;
+  const hasAnyError = hasPastTimeError || hasInvalidEndTimeError;  
+ 
+
+  const SelectField = ({ label, value, onChange, options, icon: Icon }) => (
+    <div className="space-y-2 group">
+      <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold group-focus-within:text-white transition-colors">
+        {label}
+      </label>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <Icon className="h-4 w-4 text-zinc-500 group-focus-within:text-white transition-colors" />
+        </div>
+        <select
+          value={value}
+          onChange={onChange}
+          className="w-full bg-zinc-900/50 border border-white/10 text-white text-sm rounded-xl pl-11 pr-10 py-3.5 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/10 hover:border-white/20 transition-all appearance-none cursor-pointer"
+        >
+          {options.map(opt => (
+            <option key={opt.value} value={opt.value} className="bg-zinc-900 text-white">{opt.label}</option>
+          ))}
+        </select>
+        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+            <svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!showForm) return null;
 
   return (
-    <div>
-      {showForm && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-3xl h-[90vh] overflow-y-auto">
-            {/* Background glassmorphism */}
-            <div className="absolute inset-0 bg-white backdrop-blur-xl rounded-2xl shadow-2xl border-2 border-[#e5e7eb]"></div>
-            {/* Content */}
-            <div className="relative h-full overflow-y-auto rounded-2xl">
-              {/* Header */}
-              <div className="sticky top-0 bg-white backdrop-blur-sm border-b border-[#e5e7eb] px-8 py-6 z-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-white rounded-xl shadow-lg">
-                      <Calendar className="h-6 w-6 text-teal-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-[#000000]">
-                        {editingId ? 'Edit Jadwal Acara' : 'Tambah Jadwal Acara'}
-                      </h2>
-                      <p className="text-sm font-medium text-[#6b7280]">Isi detail jadwal acara dengan lengkap</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={resetForm}
-                    className="p-2 hover:bg-gray-50 rounded-xl transition-all duration-200 group border border-[#e5e7eb]"
-                    aria-label="Tutup form"
-                  >
-                    <X className="h-5 w-5 text-[#000000] group-hover:text-[#6b7280]" />
-                  </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
+        onClick={resetForm}
+      />
+
+      {/* Modal Container */}
+      <div className="relative w-full max-w-4xl h-full max-h-[90vh] bg-zinc-950 border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-zinc-950/50 backdrop-blur-md z-10">
+            <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                    <Calendar className="h-5 w-5 text-zinc-200" />
                 </div>
-              </div>
+                <div>
+                    <h2 className="text-lg font-bold text-white tracking-tight">
+                        {editingId ? 'Edit Jadwal' : 'Buat Jadwal Baru'}
+                    </h2>
+                    <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest">
+                        Event Management System
+                    </p>
+                </div>
+            </div>
+            <button
+                onClick={resetForm}
+                className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+            >
+                <X className="w-5 h-5" />
+            </button>
+        </div>
 
-              {/* Form Body */}
-              <div className="px-8 py-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Nama Acara *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.nama_acara}
-                        onChange={(e) => setFormData({ ...formData, nama_acara: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                        placeholder="Contoh: Rapat Koordinasi Bulanan"
-                      />
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+            <form onSubmit={handleSubmit} className="space-y-8">
+                
+                {/* SECTION 1: Detail Utama */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Informasi Dasar</span>
                     </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Deskripsi
-                      </label>
-                      <textarea
-                        value={formData.deskripsi}
-                        onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                        rows={3}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                        placeholder="Tulis deskripsi singkat tentang acara ini..."
-                      />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="md:col-span-2">
+                            <InputField 
+                                label="Nama Acara" 
+                                name="nama_acara" 
+                                value={formData.nama_acara} 
+                                onChange={(e) => setFormData({ ...formData, nama_acara: e.target.value })} 
+                                icon={Hash}
+                                placeholder="Contoh: Rapat Koordinasi Tahunan"
+                                required
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <div className="space-y-2 group">
+                                <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold group-focus-within:text-white transition-colors">
+                                    Deskripsi
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute top-3.5 left-4 pointer-events-none">
+                                        <AlignLeft className="h-4 w-4 text-zinc-500 group-focus-within:text-white transition-colors" />
+                                    </div>
+                                    <textarea
+                                        value={formData.deskripsi}
+                                        onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                                        rows={3}
+                                        className="w-full bg-zinc-900/50 border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/10 transition-all placeholder:text-zinc-600 resize-none leading-relaxed"
+                                        placeholder="Jelaskan detail acara secara singkat..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Tanggal Mulai *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={formData.tanggal_mulai}
-                        onChange={(e) => setFormData({ ...formData, tanggal_mulai: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                      />
+                {/* SECTION 2: Waktu & Tanggal */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Waktu Pelaksanaan</span>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Tanggal Selesai
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.tanggal_selesai}
-                        onChange={(e) => setFormData({ ...formData, tanggal_selesai: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Waktu Mulai *
-                      </label>
-                      <input
-                        type="time"
-                        required
-                        value={formData.waktu_mulai}
-                        onChange={(e) => setFormData({ ...formData, waktu_mulai: e.target.value })}
-                        ref={waktuMulaiRef}
-                        className={`w-full px-4 py-3 bg-white border rounded-xl focus:outline-none focus:ring-2 ${
-                          hasPastTimeError
-                            ? 'border-red-500 focus:ring-red-500'
-                            : 'border-[#e5e7eb] focus:ring-teal-400'
-                        } focus:border-transparent text-sm text-[#000000]`}
-                      />
-                      {hasPastTimeError && (
-                        <p className="text-red-600 text-xs mt-1 flex items-center">
-                          <X className="w-3 h-3 mr-1" />
-                          Waktu mulai tidak boleh di masa lalu
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Waktu Selesai
-                      </label>
-                      <input
-                        type="time"
-                        value={formData.waktu_selesai}
-                        onChange={(e) => setFormData({ ...formData, waktu_selesai: e.target.value })}
-                        ref={waktuSelesaiRef}
-                        className={`w-full px-4 py-3 bg-white border rounded-xl focus:outline-none focus:ring-2 ${
-                          hasInvalidEndTimeError
-                            ? 'border-red-500 focus:ring-red-500'
-                            : 'border-[#e5e7eb] focus:ring-teal-400'
-                        } focus:border-transparent text-sm text-[#000000]`}
-                      />
-                      {hasInvalidEndTimeError && (
-                        <p className="text-red-600 text-xs mt-1 flex items-center">
-                          <X className="w-3 h-3 mr-1" />
-                          Waktu selesai harus setelah waktu mulai
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Lokasi *
-                      </label>
-                      <div className="relative location-input-container">
-                        <div className="flex gap-3">
-                          <input
-                            type="text"
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <InputField 
+                            label="Tanggal Mulai" 
+                            type="date"
+                            value={formData.tanggal_mulai} 
+                            onChange={(e) => setFormData({ ...formData, tanggal_mulai: e.target.value })} 
+                            icon={Calendar}
                             required
-                            value={formData.lokasi}
-                            onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
-                            className="flex-1 px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                            placeholder="Masukkan alamat atau nama lokasi"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => searchLocation(formData.lokasi)}
-                            disabled={loading || !formData.lokasi.trim()}
-                            className="px-5 py-3 bg-white border border-[#e5e7eb] rounded-xl text-sm font-medium text-[#000000] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {loading ? 'Mencari...' : 'Cari'}
-                          </button>
+                        />
+                        <InputField 
+                            label="Tanggal Selesai" 
+                            type="date"
+                            value={formData.tanggal_selesai} 
+                            onChange={(e) => setFormData({ ...formData, tanggal_selesai: e.target.value })} 
+                            icon={Calendar}
+                        />
+                        <InputField 
+                            label="Waktu Mulai" 
+                            type="time"
+                            value={formData.waktu_mulai} 
+                            onChange={(e) => setFormData({ ...formData, waktu_mulai: e.target.value })} 
+                            icon={Clock}
+                            required
+                            inputRef={waktuMulaiRef}
+                            error={hasPastTimeError ? "Waktu tidak boleh berlalu" : null}
+                        />
+                        <InputField 
+                            label="Waktu Selesai" 
+                            type="time"
+                            value={formData.waktu_selesai} 
+                            onChange={(e) => setFormData({ ...formData, waktu_selesai: e.target.value })} 
+                            icon={Clock}
+                            inputRef={waktuSelesaiRef}
+                            error={hasInvalidEndTimeError ? "Harus setelah waktu mulai" : null}
+                        />
+                    </div>
+                </div>
+
+                {/* SECTION 3: Lokasi */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Lokasi & Peta</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6">
+                        {/* Location Search Bar */}
+                        <div className="space-y-2 group">
+                            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold group-focus-within:text-white transition-colors">
+                                Cari Lokasi *
+                            </label>
+                            <div className="relative flex gap-2">
+                                <div className="relative flex-1">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <MapPin className="h-4 w-4 text-zinc-500 group-focus-within:text-white transition-colors" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.lokasi}
+                                        onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
+                                        className="w-full bg-zinc-900/50 border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/10 transition-all placeholder:text-zinc-600"
+                                        placeholder="Ketik alamat atau nama gedung..."
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => searchLocation(formData.lokasi)}
+                                    disabled={loading || !formData.lokasi.trim()}
+                                    className="px-6 py-3.5 bg-white text-black rounded-xl text-sm font-bold hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                                >
+                                    {loading ? '...' : <Search className="w-4 h-4" />}
+                                </button>
+
+                                {/* Dropdown Recommendations */}
+                                {showRecommendations && recommendations.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                        {recommendations.map((rec, index) => (
+                                            <div
+                                                key={index}
+                                                onClick={() => selectRecommendation(rec)}
+                                                className="px-4 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 group/item"
+                                            >
+                                                <div className="text-sm font-medium text-white group-hover/item:text-teal-400 transition-colors">{rec.title}</div>
+                                                {rec.address && (
+                                                    <div className="text-xs text-zinc-500 mt-0.5 truncate">{rec.address}</div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Skeleton Dropdown Rekomendasi */}
-                        {showRecommendations && recommendations.length === 0 && loading && (
-                          <div className="absolute z-20 w-full mt-1 bg-white border border-[#e5e7eb] rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                            {[...Array(3)].map((_, i) => (
-                              <div key={i} className="px-4 py-3 border-b border-[#e5e7eb] last:border-b-0">
-                                <Skeleton width="100%" height="16px" radius="md" className="mb-1" />
-                                <Skeleton width="80%" height="14px" radius="md" />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Dropdown Rekomendasi Asli */}
-                        {showRecommendations && recommendations.length > 0 && (
-                          <div className="absolute z-20 w-full mt-1 bg-white border border-[#e5e7eb] rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                            {recommendations.map((rec, index) => (
-                              <div
-                                key={index}
-                                onClick={() => selectRecommendation(rec)}
-                                className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-[#e5e7eb] last:border-b-0"
-                              >
-                                <div className="font-medium text-[#000000]">{rec.title}</div>
-                                {rec.address && (
-                                  <div className="text-sm text-[#6b7280] mt-1">{rec.address}</div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                        {/* Map Preview */}
+                        <div className="h-48 w-full border border-white/10 rounded-xl overflow-hidden bg-zinc-900 relative group">
+                            {loading ? (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                </div>
+                            ) : formData.lokasi ? (
+                                <>
+                                    <iframe
+                                        width="100%"
+                                        height="100%"
+                                        frameBorder="0"
+                                        style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) contrast(90%) grayscale(20%)' }}
+                                        src={`https://www.google.com/maps?q=${encodeURIComponent(formData.lokasi)}&output=embed`}
+                                        allowFullScreen
+                                        title="Lokasi Acara"
+                                        className="w-full h-full opacity-60 group-hover:opacity-100 transition-opacity duration-500"
+                                    />
+                                    <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs text-white">
+                                        {formData.serp_data ? "📍 Lokasi Terverifikasi" : "✏️ Input Manual"}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-zinc-600 gap-2">
+                                    <MapPin className="w-8 h-8 opacity-20" />
+                                    <span className="text-xs">Preview peta akan muncul di sini</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
+                </div>
 
-                    {/* Google Maps Embed */}
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Peta Lokasi
-                      </label>
-                      <div className="h-64 w-full border border-[#e5e7eb] rounded-xl overflow-hidden">
-                        {loading ? (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                            <Skeleton width="100%" height="100%" radius="xl" />
-                          </div>
-                        ) : formData.lokasi ? (
-                          <iframe
-                            width="100%"
-                            height="100%"
-                            frameBorder="0"
-                            style={{ border: 0 }}
-                            src={`https://www.google.com/maps?q=${encodeURIComponent(formData.lokasi)}&output=embed`}
-                            allowFullScreen
-                            title="Lokasi Acara"
-                            className="w-full h-full"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-50 text-[#6b7280]">
-                            Masukkan lokasi dan klik "Cari" untuk melihat peta
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs text-[#6b7280] mt-1">
-                        {formData.serp_data ?
-                          "Lokasi ditemukan melalui pencarian otomatis" :
-                          "Menampilkan peta berdasarkan input manual"
-                        }
-                      </p>
+                {/* SECTION 4: Konfigurasi Tambahan */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Konfigurasi</span>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        PIC Nama *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.pic_nama}
-                        onChange={(e) => setFormData({ ...formData, pic_nama: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                        placeholder="Nama petugas penanggung jawab"
-                      />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <InputField 
+                            label="Nama PIC" 
+                            name="pic_nama" 
+                            value={formData.pic_nama} 
+                            onChange={(e) => setFormData({ ...formData, pic_nama: e.target.value })} 
+                            icon={Hash}
+                            required
+                        />
+                        <InputField 
+                            label="Kontak PIC" 
+                            name="pic_kontak" 
+                            value={formData.pic_kontak} 
+                            onChange={(e) => setFormData({ ...formData, pic_kontak: e.target.value })} 
+                            icon={Hash}
+                        />
+                        <SelectField
+                            label="Kategori"
+                            value={formData.kategori}
+                            onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+                            icon={AlignLeft}
+                            options={[
+                                { value: 'umum', label: 'Umum' },
+                                { value: 'rapat', label: 'Rapat' },
+                                { value: 'pelatihan', label: 'Pelatihan' },
+                                { value: 'seminar', label: 'Seminar' },
+                            ]}
+                        />
+                        <SelectField
+                            label="Prioritas"
+                            value={formData.prioritas}
+                            onChange={(e) => setFormData({ ...formData, prioritas: e.target.value })}
+                            icon={Flag}
+                            options={[
+                                { value: 'biasa', label: 'Biasa' },
+                                { value: 'penting', label: 'Penting' },
+                                { value: 'sangat penting', label: 'Sangat Penting' },
+                            ]}
+                        />
+                        <InputField 
+                            label="Target Peserta" 
+                            type="number"
+                            name="peserta_target" 
+                            value={formData.peserta_target} 
+                            onChange={(e) => setFormData({ ...formData, peserta_target: e.target.value })} 
+                            icon={Users}
+                            min="1"
+                        />
+                        <SelectField
+                            label="Status Awal"
+                            value={formData.status}
+                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                            icon={CheckCircle}
+                            options={[
+                                { value: 'aktif', label: 'Aktif' },
+                                { value: 'selesai', label: 'Selesai' },
+                                { value: 'dibatalkan', label: 'Dibatalkan' },
+                                { value: 'ditunda', label: 'Ditunda' },
+                            ]}
+                        />
                     </div>
+                </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        PIC Kontak
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.pic_kontak}
-                        onChange={(e) => setFormData({ ...formData, pic_kontak: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                        placeholder="Nomor HP / Email"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Kategori
-                      </label>
-                      <select
-                        value={formData.kategori}
-                        onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                      >
-                        <option value="umum">Umum</option>
-                        <option value="rapat">Rapat</option>
-                        <option value="pelatihan">Pelatihan</option>
-                        <option value="seminar">Seminar</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Prioritas
-                      </label>
-                      <select
-                        value={formData.prioritas}
-                        onChange={(e) => setFormData({ ...formData, prioritas: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                      >
-                        <option value="biasa">Biasa</option>
-                        <option value="penting">Penting</option>
-                        <option value="sangat penting">Sangat Penting</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Target Peserta
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.peserta_target}
-                        onChange={(e) => setFormData({ ...formData, peserta_target: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                        min="1"
-                        placeholder="Jumlah peserta yang diharapkan"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[#000000] mb-2">
-                        Status
-                      </label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#e5e7eb] rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm text-[#000000]"
-                      >
-                        <option value="aktif">Aktif</option>
-                        <option value="selesai">Selesai</option>
-                        <option value="dibatalkan">Dibatalkan</option>
-                        <option value="ditunda">Ditunda</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Footer Actions */}
-                  <div className="flex justify-end gap-4 pt-6 border-t border-[#e5e7eb]">
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="px-6 py-3 text-[#000000] bg-white border border-[#e5e7eb] rounded-xl font-medium hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading || hasAnyError}
-                      className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
-                        loading || hasAnyError
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-black hover:opacity-90 text-white'
-                      }`}
-                    >
-                      {loading ? 'Menyimpan...' : editingId ? 'Perbarui' : 'Simpan'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
+            </form>
         </div>
-      )}
+
+        {/* Footer Actions */}
+        <div className="px-6 py-5 border-t border-white/5 bg-zinc-950/80 backdrop-blur-xl flex justify-end gap-3 z-10">
+            <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
+            >
+                Batal
+            </button>
+            <button
+                onClick={handleSubmit}
+                disabled={loading || hasAnyError}
+                className="px-8 py-3 rounded-xl bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-zinc-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+                {loading ? 'Processing...' : editingId ? 'Update Jadwal' : 'Simpan Jadwal'}
+            </button>
+        </div>
+
+      </div>
     </div>
   );
 };

@@ -3,7 +3,10 @@ import {
   X,
   Send,
   Loader,
-  FileText
+  FileText,
+  User,
+  Users,
+  Briefcase
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -45,7 +48,7 @@ const ForwardModal = ({ isOpen, onClose, disposisi, onSuccess }) => {
       
     } catch (error) {
       console.error('Error fetching data:', error);
-      alert('Gagal memuat data');
+      // alert('Gagal memuat data'); // Ganti dengan toast di implementasi nyata jika ada
     } finally {
       setLoadingData(false);
     }
@@ -83,7 +86,7 @@ const ForwardModal = ({ isOpen, onClose, disposisi, onSuccess }) => {
 
       const response = await api.post(`/disposisi/atasan/${user.role}/teruskan/${disposisi.id}`, payload);
 
-      alert(response.data.message || 'Disposisi berhasil diteruskan');
+      // alert(response.data.message || 'Disposisi berhasil diteruskan'); // Ganti dengan toast
       onSuccess();
       onClose();
     } catch (error) {
@@ -106,179 +109,215 @@ const ForwardModal = ({ isOpen, onClose, disposisi, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 min-h-screen bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-200 shadow-2xl ">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        onClick={handleClose}
+      />
+
+      {/* Modal Container */}
+      <div className="relative w-full max-w-lg bg-zinc-950 border border-white/10 rounded-3xl shadow-2xl shadow-black/50 overflow-hidden flex flex-col max-h-[90vh]">
+        
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
-          <h3 className="text-lg font-semibold text-black">Teruskan Disposisi</h3>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-zinc-900/50">
+          <div>
+              <h3 className="text-lg font-semibold text-white tracking-tight">Teruskan Disposisi</h3>
+              <p className="text-xs text-zinc-500 mt-0.5">Pilih penerima disposisi surat ini</p>
+          </div>
           <button
             onClick={handleClose}
-            className="text-black hover:text-black transition-colors"
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {/* Info Disposisi */}
-          <div className="bg-gradient-to-br from-white to-[#FDFCFB] rounded-lg p-4 mb-6 border border-slate-200 shadow-sm">
-            <h4 className="font-medium text-black mb-2 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-teal-400" />
-              Disposisi yang akan diteruskan:
-            </h4>
-            <p className="text-sm text-black mb-1">
-              <span className="font-medium">Perihal:</span> {disposisi.perihal}
-            </p>
-            <p className="text-sm text-black">
-              <span className="font-medium">Sifat:</span> {disposisi.sifat}
-            </p>
+        {/* Content Scrollable Area */}
+        <div className="p-6 overflow-y-auto custom-scrollbar">
+          
+          {/* Info Card - Dark Glass */}
+          <div className="bg-zinc-900/50 rounded-2xl p-4 mb-6 border border-white/5 relative overflow-hidden group">
+            {/* Glow Effect */}
+            <div className="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-colors" />
+            
+            <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                    <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400">
+                        <FileText className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Detail Surat</span>
+                </div>
+                <div className="space-y-2">
+                    <div>
+                        <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-0.5">Perihal</p>
+                        <p className="text-sm text-zinc-200 font-medium leading-relaxed">{disposisi.perihal}</p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-0.5">Sifat Surat</p>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/5 text-zinc-300 border border-white/5">
+                            {disposisi.sifat}
+                        </span>
+                    </div>
+                </div>
+            </div>
           </div>
 
-          {/* Pilihan Tipe Penerusan */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-black mb-2">
-              Cara Penerusan
+          {/* Tipe Penerusan Switcher */}
+          <div className="mb-6">
+            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
+              Metode Penerusan
             </label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-3 p-1 bg-zinc-900/50 rounded-xl border border-white/5">
               <button
                 onClick={() => setTipePenerusan('user')}
-                className={`flex-1 py-2 px-3 text-sm rounded-lg border transition-all duration-200 ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold rounded-lg transition-all duration-300 ${
                   tipePenerusan === 'user'
-                    ? 'bg-teal-400 text-white  shadow-md'
-                    : 'bg-white/60 backdrop-blur-sm text-black border-slate-200 hover:bg-white hover:shadow-sm'
+                    ? 'bg-zinc-800 text-white shadow-lg shadow-black/20 border border-white/10'
+                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                 }`}
               >
-                Ke User Spesifik
+                <User className="w-3.5 h-3.5" />
+                User Spesifik
               </button>
               <button
                 onClick={() => setTipePenerusan('jabatan')}
-                className={`flex-1 py-2 px-3 text-sm rounded-lg border transition-all duration-200 ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold rounded-lg transition-all duration-300 ${
                   tipePenerusan === 'jabatan'
-                    ? 'bg-teal-400 text-white  shadow-md'
-                    : 'bg-white/60 backdrop-blur-sm text-black border-slate-200 hover:bg-white hover:shadow-sm'
+                    ? 'bg-zinc-800 text-white shadow-lg shadow-black/20 border border-white/10'
+                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                 }`}
               >
-                Ke Jabatan
+                <Briefcase className="w-3.5 h-3.5" />
+                Jabatan
               </button>
             </div>
           </div>
 
-          {/* Form Penerusan */}
-          {tipePenerusan === 'jabatan' ? (
-            // Penerusan ke Jabatan
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-black mb-2">
-                Teruskan Kepada Jabatan <span className="text-red-500">*</span>
-              </label>
-              {loadingData ? (
-                <div className="flex items-center justify-center py-4 bg-white/60 backdrop-blur-sm rounded-lg border border-slate-200">
-                  <Loader className="w-4 h-4 animate-spin mr-2 text-black" />
-                  <span className="text-sm text-black">Memuat daftar jabatan...</span>
+          {/* Form Fields */}
+          <div className="space-y-5">
+              {tipePenerusan === 'jabatan' ? (
+                // Penerusan ke Jabatan
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                    Pilih Jabatan <span className="text-red-500">*</span>
+                  </label>
+                  {loadingData ? (
+                    <div className="flex items-center gap-3 px-4 py-3 bg-zinc-900 border border-white/5 rounded-xl text-zinc-500 text-sm">
+                      <Loader className="w-4 h-4 animate-spin" />
+                      <span>Memuat daftar jabatan...</span>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                        <select
+                        value={selectedJabatan}
+                        onChange={(e) => setSelectedJabatan(e.target.value)}
+                        className="w-full px-4 py-3 bg-zinc-900 border border-white/10 text-zinc-200 rounded-xl focus:outline-none focus:border-white/30 focus:bg-black transition-all appearance-none text-sm"
+                        disabled={loading}
+                        >
+                        <option value="" className="bg-zinc-900 text-zinc-500">Pilih jabatan penerima...</option>
+                        {jabatanList.map((jabatan) => (
+                            <option key={jabatan} value={jabatan} className="bg-zinc-900 text-white">
+                            {jabatan}
+                            </option>
+                        ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                            <Users className="w-4 h-4" />
+                        </div>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-zinc-500 mt-2 flex items-center gap-1.5 bg-white/5 p-2 rounded-lg border border-white/5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                    Disposisi akan hilang dari inbox Anda setelah diteruskan.
+                  </p>
                 </div>
               ) : (
-                <select
-                  value={selectedJabatan}
-                  onChange={(e) => setSelectedJabatan(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/60 backdrop-blur-sm border border-slate-200 text-black rounded-lg focus:ring-2 focus:ring-[#D4A373] focus:border-transparent shadow-sm"
-                  disabled={loading}
-                >
-                  <option value="" className="bg-white text-black">Pilih jabatan penerima</option>
-                  {jabatanList.map((jabatan) => (
-                    <option key={jabatan} value={jabatan} className="bg-white text-black">
-                      {jabatan}
-                    </option>
-                  ))}
-                </select>
+                // Penerusan ke User Spesifik
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                    Pilih Bawahan <span className="text-red-500">*</span>
+                  </label>
+                  {loadingData ? (
+                    <div className="flex items-center gap-3 px-4 py-3 bg-zinc-900 border border-white/5 rounded-xl text-zinc-500 text-sm">
+                      <Loader className="w-4 h-4 animate-spin" />
+                      <span>Memuat daftar bawahan...</span>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                        <select
+                        value={selectedUserId}
+                        onChange={(e) => setSelectedUserId(e.target.value)}
+                        className="w-full px-4 py-3 bg-zinc-900 border border-white/10 text-zinc-200 rounded-xl focus:outline-none focus:border-white/30 focus:bg-black transition-all appearance-none text-sm"
+                        disabled={loading}
+                        >
+                        <option value="" className="bg-zinc-900 text-zinc-500">Pilih bawahan...</option>
+                        {bawahanList.map((bawahan) => (
+                            <option key={bawahan.id} value={bawahan.id} className="bg-zinc-900 text-white">
+                            {bawahan.name} - {bawahan.jabatan}
+                            </option>
+                        ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                            <User className="w-4 h-4" />
+                        </div>
+                    </div>
+                  )}
+                  {bawahanList.length === 0 && !loadingData && (
+                    <p className="text-xs text-red-400 mt-2 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
+                      Tidak ada bawahan ditemukan di struktur Anda.
+                    </p>
+                  )}
+                </div>
               )}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
-                <p className="text-sm text-teal-800">
-                  <strong>Info:</strong> Disposisi akan hilang dari daftar Anda setelah diteruskan ke jabatan.
-                </p>
+
+              {/* Catatan Area */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                  Catatan Tambahan
+                </label>
+                <textarea
+                  value={catatan}
+                  onChange={(e) => setCatatan(e.target.value)}
+                  placeholder="Tulis instruksi atau catatan untuk penerima..."
+                  rows={4}
+                  className="w-full px-4 py-3 bg-zinc-900 border border-white/10 text-zinc-200 placeholder-zinc-600 rounded-xl focus:outline-none focus:border-white/30 focus:bg-black transition-all resize-none text-sm"
+                  disabled={loading}
+                />
               </div>
-            </div>
-          ) : (
-            // Penerusan ke User Spesifik (hanya bawahan)
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-black mb-2">
-                Teruskan Kepada Bawahan <span className="text-red-500">*</span>
-              </label>
-              {loadingData ? (
-                <div className="flex items-center justify-center py-4 bg-white/60 backdrop-blur-sm rounded-lg border border-slate-200">
-                  <Loader className="w-4 h-4 animate-spin mr-2 text-black" />
-                  <span className="text-sm text-black">Memuat daftar bawahan...</span>
-                </div>
-              ) : (
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/60 backdrop-blur-sm border border-slate-200 text-black rounded-lg focus:ring-2 focus:ring-[#D4A373] focus:border-transparent shadow-sm"
-                  disabled={loading}
-                >
-                  <option value="" className="bg-white text-black">Pilih bawahan</option>
-                  {bawahanList.map((bawahan) => (
-                    <option key={bawahan.id} value={bawahan.id} className="bg-white text-black">
-                      {bawahan.name} - {bawahan.jabatan}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {bawahanList.length === 0 && !loadingData && (
-                <p className="text-sm text-black/70 mt-1">
-                  Tidak ada bawahan di bidang Anda
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Catatan */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-black mb-2">
-              Catatan Atasan (Opsional)
-            </label>
-            <textarea
-              value={catatan}
-              onChange={(e) => setCatatan(e.target.value)}
-              placeholder="Tambahkan catatan untuk penerima..."
-              rows={3}
-              className="w-full px-3 py-2 bg-white/60 backdrop-blur-sm border border-slate-200 text-black placeholder-[#6D4C41]/60 rounded-lg focus:ring-2 focus:ring-[#D4A373] focus:border-transparent resize-none shadow-sm"
-              disabled={loading}
-            />
-            <p className="text-xs text-black/70 mt-1">
-              Catatan ini akan disimpan sebagai catatan atasan
-            </p>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={handleClose}
-              disabled={loading}
-              className="px-4 py-2 text-black bg-gradient-to-br from-white to-[#FDFCFB] rounded-lg hover:from-[#FDFCFB] hover:to-[#EDE6E3] border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              Batal
-            </button>
-            <button
-              onClick={handleForward}
-              disabled={loading || loadingData || 
-                (tipePenerusan === 'jabatan' && !selectedJabatan) || 
-                (tipePenerusan === 'user' && !selectedUserId)}
-              className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl border border-slate-200"
-            >
-              {loading ? (
-                <>
-                  <Loader className="w-4 h-4 animate-spin" />
-                  <span>Mengirim...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Teruskan</span>
-                </>
-              )}
-            </button>
           </div>
         </div>
+
+        {/* Footer Actions */}
+        <div className="p-6 border-t border-white/5 bg-zinc-900/30 flex justify-end gap-3">
+          <button
+            onClick={handleClose}
+            disabled={loading}
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleForward}
+            disabled={loading || loadingData || 
+              (tipePenerusan === 'jabatan' && !selectedJabatan) || 
+              (tipePenerusan === 'user' && !selectedUserId)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-xl font-bold text-sm transition-all shadow-lg shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                <span>Teruskan Sekarang</span>
+              </>
+            )}
+          </button>
+        </div>
+
       </div>
     </div>
   );

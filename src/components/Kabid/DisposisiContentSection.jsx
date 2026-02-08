@@ -1,85 +1,123 @@
 import React from 'react'
 import isImageFile from '../../utils/isImageFile';
-import { FileText, MessageSquare, User } from 'lucide-react';
+import { FileText, MessageSquare, User, Paperclip } from 'lucide-react';
 
-export const DisposisiContentSection = ({disposisi, onImageClick}) => {
+export const DisposisiContentSection = ({ disposisi, onImageClick }) => {
   return (
-    <div className="mt-4 space-y-2">
-      <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-        <h4 className="font-semibold mb-4 flex items-center" >
-          <MessageSquare className="w-5 h-5 mr-3" />
-          Dengan hormat harap:
-        </h4>
-        <div className="bg-[#FDFCFB] border border-slate-200 p-4 rounded-lg shadow-sm">
-          <p className="whitespace-pre-wrap leading-relaxed" >
+    <div className="mt-6 space-y-4">
+      
+      {/* 1. Section: Instruksi (Dengan hormat harap) */}
+      <div className="bg-zinc-900/50 backdrop-blur-sm rounded-3xl p-6 border border-white/5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+          <h4 className="font-semibold text-white tracking-tight">
+            Instruksi Disposisi
+          </h4>
+        </div>
+        
+        <div className="bg-black/20 border border-white/5 p-5 rounded-2xl">
+          <p className="whitespace-pre-wrap leading-relaxed text-zinc-300 text-sm">
             {disposisi.dengan_hormat_harap}
           </p>
         </div>
       </div>
+
+      {/* 2. Section: Catatan Kepala */}
       {disposisi.catatan && (
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-          <h4 className="font-semibold mb-4 flex items-center" >
-            <User className="w-5 h-5 mr-3" />
-            Catatan dari Kepala
-          </h4>
-          <div className="bg-[#FDFCFB] border border-slate-200 p-4 rounded-lg shadow-sm">
-            <p className="leading-relaxed" >{disposisi.catatan}</p>
+        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-3xl p-6 border border-white/5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-400">
+              <User className="w-5 h-5" />
+            </div>
+            <h4 className="font-semibold text-white tracking-tight">
+              Catatan Kepala
+            </h4>
+          </div>
+          
+          <div className="bg-black/20 border border-white/5 p-5 rounded-2xl">
+            <p className="leading-relaxed text-zinc-300 text-sm">
+              {disposisi.catatan}
+            </p>
           </div>
         </div>
       )}
+
+      {/* 3. Section: Catatan Atasan (Keterangan Anda) */}
       {disposisi.catatan_atasan && (
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-          <h4 className="font-semibold mb-4 flex items-center" >
-            <User className="w-5 h-5 mr-3" />
-            Keterangan dari Anda
-          </h4>
-          <div className="bg-[#FDFCFB] border border-slate-200 p-4 rounded-lg shadow-sm">
-            <p className="leading-relaxed" >{disposisi.catatan_atasan}</p>
+        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-3xl p-6 border border-white/5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-400">
+              <User className="w-5 h-5" />
+            </div>
+            <h4 className="font-semibold text-white tracking-tight">
+              Keterangan dari Anda
+            </h4>
+          </div>
+          
+          <div className="bg-black/20 border border-white/5 p-5 rounded-2xl">
+            <p className="leading-relaxed text-zinc-300 text-sm">
+              {disposisi.catatan_atasan}
+            </p>
           </div>
         </div>
       )}
+
+      {/* 4. Section: Lampiran */}
       {disposisi.surat_masuk?.has_photos && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center mb-4">
-            <FileText className="w-6 h-6 mr-3" />
-            <h3 className="font-semibold">Lampiran</h3>
+        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-3xl p-6 border border-white/5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2.5 bg-zinc-800 rounded-xl border border-white/5 text-zinc-400">
+              <Paperclip className="w-5 h-5" />
+            </div>
+            <h3 className="font-semibold text-white tracking-tight">
+              Lampiran ({disposisi.surat_masuk.photos.length} file)
+            </h3>
           </div>
-          <div className="flex flex-wrap gap-2">
+          
+          <div className="flex flex-wrap gap-3">
             {disposisi.surat_masuk.photos.map((photo, index) => {
               const isImage = isImageFile(photo);
               return (
                 <div
                   key={photo.id}
-                  className="relative rounded-xl overflow-hidden cursor-pointer border border-slate-200 hover:scale-105 transition-all duration-300 shadow-sm"
+                  className="group relative w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden cursor-pointer border border-white/10 bg-black/40 hover:border-white/30 hover:shadow-lg hover:shadow-black/50 transition-all duration-300"
                   onClick={() => {
                     if (isImage) {
                       onImageClick(photo.url);
                     } else {
-                      // Non-gambar: buka di tab baru
                       window.open(photo.url, '_blank', 'noopener,noreferrer');
                     }
                   }}
                 >
-                  <div className="w-20 md:w-32 h-20 md:h-32 flex items-center justify-center bg-gray-50">
-                    {isImage ? (
+                  {isImage ? (
+                    <>
                       <img
                         src={photo.url}
-                        alt={`Surat foto ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        alt={`Lampiran ${index + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         loading="lazy"
                         onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/128x128?text=No+Image';
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
                         }}
                       />
-                    ) : (
-                      <div className="text-[#D9534F] flex flex-col items-center justify-center">
+                      {/* Fallback jika gambar error / loading */}
+                      <div className="hidden w-full h-full items-center justify-center bg-zinc-900 text-zinc-700">
                         <FileText className="w-8 h-8" />
-                        <p className="text-xs font-bold mt-1 text-center break-words">
-                          {photo.filename.split('.').pop()?.toUpperCase()}
-                        </p>
                       </div>
-                    )}
-                  </div>
+                      {/* Overlay Hover */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-2 text-zinc-500 group-hover:text-white transition-colors bg-zinc-900/50">
+                      <FileText className="w-8 h-8 mb-2 opacity-70 group-hover:opacity-100" />
+                      <p className="text-[10px] font-bold uppercase text-center break-words max-w-full px-1">
+                        {photo.filename.split('.').pop() || 'FILE'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}

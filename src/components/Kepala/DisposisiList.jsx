@@ -1,9 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, FileText, Calendar, Building, User, AlertCircle, Loader2, Filter, RotateCcw, Trash2, X, RefreshCcw, CheckCircle, Clock, Archive, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import { 
+  Search, 
+  Eye, 
+  FileText, 
+  Clock, 
+  Archive, 
+  Filter, 
+  RotateCcw, 
+  Trash2, 
+  X, 
+  RefreshCcw, 
+  CheckCircle2, 
+  AlertTriangle, 
+  ChevronLeft, 
+  ChevronRight, 
+  MoreVertical,
+  Calendar,
+  Building,
+  User,
+  Activity
+} from 'lucide-react';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../Ui/LoadingSpinner';
-import StatCard from '../Ui/StatCard';
+
+// === SUB-COMPONENTS (INLINED FOR STYLE CONSISTENCY) ===
+
+// 1. Dark Glass Badge
+const Badge = ({ children, variant = 'default' }) => {
+  const variants = {
+    default: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+    success: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', // Selesai
+    warning: 'bg-amber-500/10 text-amber-400 border-amber-500/20', // Proses
+    info: 'bg-blue-500/10 text-blue-400 border-blue-500/20', // Dibaca
+    danger: 'bg-red-500/10 text-red-400 border-red-500/20', // Sangat Segera
+    purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20', // Rahasia
+  };
+
+  return (
+    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${variants[variant] || variants.default}`}>
+      {children}
+    </span>
+  );
+};
+
+// 2. Stat Card (Bento Style)
+const StatBox = ({ title, count, icon: Icon, colorClass }) => (
+  <div className="relative group overflow-hidden bg-zinc-900/30 border border-white/5 p-5 rounded-2xl hover:bg-white/5 transition-all duration-300">
+    <div className={`absolute right-2 top-2 p-2 rounded-xl bg-white/5 ${colorClass} group-hover:scale-110 transition-transform`}>
+      <Icon className="w-4 h-4" />
+    </div>
+    <div className="mt-4">
+      <h3 className="text-2xl font-semibold text-white tracking-tight">{count}</h3>
+      <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mt-1">{title}</p>
+    </div>
+  </div>
+);
 
 const DisposisiList = () => {
   const [disposisi, setDisposisi] = useState([]);
@@ -17,9 +69,8 @@ const DisposisiList = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(6); // Reduced for grid layout
 
-  // Fetch data disposisi
   const fetchDisposisi = async () => {
     try {
       setLoading(true);
@@ -33,410 +84,126 @@ const DisposisiList = () => {
     }
   };
 
-  // Handle delete disposisi
   const handleDelete = async (id) => {
     try {
       setDeleteLoading(id);
       const response = await api.delete(`/disposisi/kepala/${id}`);
-
-      setDisposisi(prevDisposisi => prevDisposisi.filter(item => item.id !== id));
+      setDisposisi(prev => prev.filter(item => item.id !== id));
       toast.success(response.data.message || 'Disposisi berhasil dihapus');
-      setShowDeleteModal(false);
-      setSelectedDisposisi(null);
+      closeDeleteModal();
     } catch (err) {
-      console.error('Error deleting disposisi:', err);
       toast.error(err.response?.data?.error || 'Gagal menghapus disposisi');
     } finally {
       setDeleteLoading(null);
     }
   };
 
-  // Open delete confirmation modal
-  const openDeleteModal = (disposisiItem) => {
-    setSelectedDisposisi(disposisiItem);
+  const openDeleteModal = (item) => {
+    setSelectedDisposisi(item);
     setShowDeleteModal(true);
   };
 
-  // Close delete confirmation modal
   const closeDeleteModal = () => {
     setShowDeleteModal(false);
     setSelectedDisposisi(null);
   };
 
-  // Load data saat komponen mount
   useEffect(() => {
     fetchDisposisi();
   }, []);
 
-  // Filter data berdasarkan search dan filter
   const filteredDisposisi = disposisi.filter(item => {
     const matchSearch = searchTerm === '' ||
       item.perihal?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.asal_instansi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.disposisi_kepada_jabatan?.toLowerCase().includes(searchTerm.toLowerCase());
-
     const matchSifat = selectedSifat === '' || item.sifat === selectedSifat;
     const matchStatus = selectedStatus === '' || item.status === selectedStatus;
-
     return matchSearch && matchSifat && matchStatus;
   });
 
-  // Pagination calculations
+  // Pagination Logic
   const totalItems = filteredDisposisi.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredDisposisi.slice(startIndex, endIndex);
+  const currentItems = filteredDisposisi.slice(startIndex, startIndex + itemsPerPage);
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedSifat, selectedStatus]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedSifat, selectedStatus]);
 
-  // Pagination functions
-  const goToPage = (page) => {
-    setCurrentPage(page);
+  // Statistics
+  const stats = {
+    total: disposisi.length,
+    unread: disposisi.filter(i => i.status === 'belum dibaca').length,
+    process: disposisi.filter(i => ['dalam proses', 'diproses'].includes(i.status)).length,
+    done: disposisi.filter(i => i.status === 'selesai').length
   };
 
-  const goToPreviousPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  };
-
-  const goToNextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  };
-
-  const changeItemsPerPage = (newItemsPerPage) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  };
-
-  // Calculate statistics
-  const totalDisposisi = disposisi.length;
-  const belumDibaca = disposisi.filter(item => item.status === 'belum dibaca').length;
-  const diproses = disposisi.filter(item => item.status === 'dalam proses' || item.status === 'diproses').length;
-  const selesai = disposisi.filter(item => item.status === 'selesai').length;
-
-  // Format tanggal
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+      day: 'numeric', month: 'short', year: 'numeric'
     });
   };
 
-  // Reset filters
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedSifat('');
-    setSelectedStatus('');
-    setCurrentPage(1);
+  // Helper for Badge Styles
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'belum dibaca': return 'default'; // Grey/Zinc
+      case 'dibaca': return 'info';
+      case 'dalam proses':
+      case 'diproses': return 'warning';
+      case 'selesai': return 'success';
+      default: return 'default';
+    }
   };
 
-  // === STATUS BADGE (DISAMAKAN DENGAN GAYA SURAT MASUK) ===
-  const StatusBadge = ({ status }) => {
-    const getStatusColor = (status) => {
-      switch (status) {
-        case 'belum dibaca': return 'bg-green-100 text-green-800';
-        case 'dibaca': return 'bg-blue-100 text-blue-800';
-        case 'dalam proses':
-        case 'diproses': return 'bg-yellow-100 text-yellow-800';
-        case 'selesai': return 'bg-gray-100 text-gray-800';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    };
-
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-        {status}
-      </span>
-    );
+  const getSifatVariant = (sifat) => {
+    switch (sifat) {
+      case 'Sangat Segera': return 'danger';
+      case 'Segera': return 'warning';
+      case 'Rahasia': return 'purple';
+      case 'Biasa': return 'info';
+      default: return 'default';
+    }
   };
 
-  // === SIFAT BADGE (DIUBAH SESUAI PALET STANDAR SURAT MASUK) ===
-  const SifatBadge = ({ sifat }) => {
-    const getSifatColor = (sifat) => {
-      switch (sifat) {
-        case 'Sangat Segera': return 'bg-red-100 text-red-800';
-        case 'Segera': return 'bg-orange-100 text-orange-800';
-        case 'Biasa': return 'bg-blue-100 text-blue-800';
-        case 'Rahasia': return 'bg-purple-100 text-purple-800';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    };
-
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSifatColor(sifat)}`}>
-        {sifat}
-      </span>
-    );
-  };
-
-  // === PAGINATION COMPONENT (GAYA MINIMALIS & SESUAI SURAT MASUK) ===
-  const Pagination = () => {
-    if (totalItems === 0) return null;
-
-    const getVisiblePages = () => {
-      const visiblePages = [];
-      const maxVisible = 5;
-
-      if (totalPages <= maxVisible) {
-        for (let i = 1; i <= totalPages; i++) {
-          visiblePages.push(i);
-        }
-      } else {
-        if (currentPage <= 3) {
-          for (let i = 1; i <= 4; i++) {
-            visiblePages.push(i);
-          }
-          visiblePages.push('...');
-          visiblePages.push(totalPages);
-        } else if (currentPage >= totalPages - 2) {
-          visiblePages.push(1);
-          visiblePages.push('...');
-          for (let i = totalPages - 3; i <= totalPages; i++) {
-            visiblePages.push(i);
-          }
-        } else {
-          visiblePages.push(1);
-          visiblePages.push('...');
-          for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-            visiblePages.push(i);
-          }
-          visiblePages.push('...');
-          visiblePages.push(totalPages);
-        }
-      }
-
-      return visiblePages;
-    };
-
-    return (
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mt-6">
-        <div className="text-sm text-gray-700">
-          Menampilkan {startIndex + 1} - {Math.min(endIndex, totalItems)} dari {totalItems} data
-        </div>
-
-        <div className="flex items-center gap-2">
-          <select
-            value={itemsPerPage}
-            onChange={(e) => changeItemsPerPage(Number(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-          >
-            <option value={5}>5/hal</option>
-            <option value={10}>10/hal</option>
-            <option value={25}>25/hal</option>
-            <option value={50}>50/hal</option>
-          </select>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={goToPreviousPage}
-              disabled={currentPage === 1}
-              className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-
-            {getVisiblePages().map((page, index) =>
-              page === '...' ? (
-                <span key={index} className="px-3 py-1">...</span>
-              ) : (
-                <button
-                  key={index}
-                  onClick={() => goToPage(page)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition ${
-                    currentPage === page
-                      ? 'bg-black text-white'
-                      : 'bg-white text-black hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
-                  {page}
-                </button>
-              )
-            )}
-
-            <button
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-              className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // === DELETE MODAL (GAYA CARD & BUTTON SESUAI SURAT MASUK) ===
-  const DeleteModal = () => {
-    if (!showDeleteModal || !selectedDisposisi) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border border-slate-200">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-red-100 rounded-full">
-                  <Trash2 className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Konfirmasi Hapus</h3>
-                  <p className="text-sm text-gray-500">Tindakan ini tidak dapat dibatalkan</p>
-                </div>
-              </div>
-              <button
-                onClick={closeDeleteModal}
-                className="p-2 hover:bg-gray-100 rounded-full transition"
-              >
-                <X className="h-5 w-5 text-gray-600" />
-              </button>
-            </div>
-
-            <div className="mb-2">
-              <p className="text-gray-800 font-medium mb-2">
-                Apakah Anda yakin ingin menghapus disposisi ini?
-              </p>
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                <p className="font-semibold text-gray-900">{selectedDisposisi.perihal}</p>
-                <p className="text-sm text-gray-600 mt-1">Nomor: {selectedDisposisi.nomor_surat}</p>
-                <p className="text-sm text-gray-600">Dari: {selectedDisposisi.asal_instansi}</p>
-              </div>
-              <p className="text-red-600 text-xs mt-3">
-                <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan. Status surat akan diubah menjadi belum didisposisi.
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={closeDeleteModal}
-                className="px-4 py-2.5 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 font-medium transition"
-                disabled={deleteLoading === selectedDisposisi.id}
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => handleDelete(selectedDisposisi.id)}
-                disabled={deleteLoading === selectedDisposisi.id}
-                className={`px-4 py-2.5 rounded-full font-medium text-white transition flex items-center gap-2 ${
-                  deleteLoading === selectedDisposisi.id
-                    ? 'bg-red-400 cursor-not-allowed opacity-75'
-                    : 'bg-red-500 hover:bg-red-600'
-                }`}
-              >
-                {deleteLoading === selectedDisposisi.id ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Menghapus...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4" />
-                    Hapus
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  if (loading) return <div className="py-20 flex justify-center"><LoadingSpinner /></div>;
 
   return (
-    <div className="min-h-screen">
-      <main className="">
-
-        {/* Header Refresh */}
-        <div className="flex items-center justify-between mb-2">
-          <button
-            onClick={fetchDisposisi}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 text-sm font-medium shadow-sm transition"
-          >
-            <RefreshCcw className="w-4 h-4" /> Refresh
-          </button>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      
+      {/* 1. Top Section: Stats & Controls */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        {/* Stats Column */}
+        <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatBox title="Total Data" count={stats.total} icon={Archive} colorClass="text-zinc-400" />
+          <StatBox title="Belum Dibaca" count={stats.unread} icon={Activity} colorClass="text-red-400" />
+          <StatBox title="Diproses" count={stats.process} icon={Clock} colorClass="text-amber-400" />
+          <StatBox title="Selesai" count={stats.done} icon={CheckCircle2} colorClass="text-emerald-400" />
         </div>
 
-        {/* Stat Cards — Disesuaikan Gaya SuratMasukList */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
-          <StatCard
-            title="Total Disposisi"
-            count={totalDisposisi}
-            icon={Archive}
-            bgColor="bg-white"
-            textColor="text-black"
-            iconBg="bg-teal-400"
-            borderColor="border-slate-200"
-            iconColor="text-white"
-          />
-          <StatCard
-            title="Belum Dibaca"
-            count={belumDibaca}
-            icon={Clock}
-            bgColor="bg-white"
-            textColor="text-black"
-            iconBg="bg-green-100"
-            borderColor="border-slate-200"
-            iconColor="text-green-800"
-          />
-          <StatCard
-            title="Diproses"
-            count={diproses}
-            icon={FileText}
-            bgColor="bg-white"
-            textColor="text-black"
-            iconBg="bg-yellow-100"
-            borderColor="border-slate-200"
-            iconColor="text-yellow-800"
-          />
-          <StatCard
-            title="Selesai"
-            count={selesai}
-            icon={CheckCircle}
-            bgColor="bg-black"
-            textColor="text-white"
-            iconBg="bg-white"
-            borderColor="border-slate-200"
-            iconColor="text-teal-400"
-          />
-        </div>
+        {/* Filters Bar */}
+        <div className="lg:col-span-4 bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+          
+          <div className="relative w-full md:w-96 group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-white transition-colors" />
+            <input 
+              type="text" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Cari perihal, instansi..." 
+              className="w-full bg-black/20 border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/20 focus:bg-black/40 transition-all"
+            />
+          </div>
 
-        {/* Filters — Disesuaikan Gaya SuratMasukList */}
-        <div className="mb-2">
-          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Cari berdasarkan perihal, nomor surat, instansi, atau jabatan..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 text-sm rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              />
-            </div>
-
-            {/* Filter Sifat */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <select
+          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <div className="relative min-w-[140px]">
+              <select 
                 value={selectedSifat}
                 onChange={(e) => setSelectedSifat(e.target.value)}
-                className="px-4 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full appearance-none bg-zinc-800/50 border border-white/5 rounded-xl py-2.5 px-4 text-sm text-zinc-300 focus:outline-none focus:border-white/20 cursor-pointer hover:bg-zinc-800 transition-colors"
               >
                 <option value="">Semua Sifat</option>
                 <option value="Sangat Segera">Sangat Segera</option>
@@ -444,15 +211,14 @@ const DisposisiList = () => {
                 <option value="Rahasia">Rahasia</option>
                 <option value="Biasa">Biasa</option>
               </select>
+              <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
             </div>
 
-            {/* Filter Status */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <select
+            <div className="relative min-w-[140px]">
+              <select 
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full appearance-none bg-zinc-800/50 border border-white/5 rounded-xl py-2.5 px-4 text-sm text-zinc-300 focus:outline-none focus:border-white/20 cursor-pointer hover:bg-zinc-800 transition-colors"
               >
                 <option value="">Semua Status</option>
                 <option value="belum dibaca">Belum Dibaca</option>
@@ -460,135 +226,179 @@ const DisposisiList = () => {
                 <option value="diproses">Dalam Proses</option>
                 <option value="selesai">Selesai</option>
               </select>
+              <Activity className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
             </div>
 
-            {/* Reset Button */}
-            <button
-              onClick={resetFilters}
-              className="px-4 py-2.5 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 font-medium transition flex items-center gap-2"
+            <button 
+              onClick={() => { setSearchTerm(''); setSelectedSifat(''); setSelectedStatus(''); }}
+              className="p-2.5 bg-zinc-800/50 border border-white/5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              title="Reset Filter"
             >
-              <RotateCcw className="h-4 w-4" /> Reset
+              <RotateCcw className="w-4 h-4" />
             </button>
-
+            
+            <button 
+              onClick={fetchDisposisi}
+              className="p-2.5 bg-zinc-800/50 border border-white/5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              title="Refresh Data"
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Disposisi List — CARD LAYOUT (SEPERTI SURAT MASUK) */}
-        {currentItems.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-2">
-              <FileText className="w-10 h-10 text-gray-300" />
+      {/* 2. Disposisi Grid List */}
+      {currentItems.length === 0 ? (
+        <div className="text-center py-20 bg-zinc-900/30 border border-white/5 rounded-3xl backdrop-blur-sm">
+          <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+            <FileText className="w-6 h-6 text-zinc-500" />
+          </div>
+          <h3 className="text-lg font-light text-white mb-1">Data tidak ditemukan</h3>
+          <p className="text-zinc-500 text-sm">Coba sesuaikan filter pencarian Anda.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {currentItems.map((item) => (
+            <div 
+              key={item.id} 
+              className="group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-5 hover:border-white/10 hover:bg-zinc-900/60 transition-all duration-300 overflow-hidden"
+            >
+              {/* Decorative Glow */}
+              <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors duration-500" />
+
+              {/* Header */}
+              <div className="relative z-10 flex justify-between items-start mb-4">
+                <div className="flex-1 pr-4">
+                  <h3 className="text-base font-semibold text-white leading-tight mb-1 line-clamp-2 group-hover:text-indigo-200 transition-colors">
+                    {item.perihal || 'Tanpa Perihal'}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-zinc-500 mt-2">
+                    <Calendar className="w-3 h-3" />
+                    <span>{formatDate(item.created_at)}</span>
+                    <span className="w-1 h-1 bg-zinc-700 rounded-full" />
+                    <span className="font-mono text-zinc-400">{item.nomor_surat || '-'}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge variant={getSifatVariant(item.sifat)}>{item.sifat || 'Biasa'}</Badge>
+                </div>
+              </div>
+
+              {/* Info Grid */}
+              <div className="relative z-10 grid grid-cols-2 gap-3 mb-6 bg-black/20 rounded-xl p-3 border border-white/5">
+                <div>
+                   <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Dari Instansi</p>
+                   <div className="flex items-center gap-1.5 text-xs text-zinc-300">
+                      <Building className="w-3 h-3 text-zinc-500" />
+                      <span className="truncate">{item.asal_instansi || '-'}</span>
+                   </div>
+                </div>
+                <div>
+                   <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Kepada</p>
+                   <div className="flex items-center gap-1.5 text-xs text-zinc-300">
+                      <User className="w-3 h-3 text-zinc-500" />
+                      <span className="truncate">{item.disposisi_kepada_jabatan || '-'}</span>
+                   </div>
+                </div>
+              </div>
+
+              {/* Footer / Actions */}
+              <div className="relative z-10 mt-auto flex items-center justify-between pt-4 border-t border-white/5">
+                <Badge variant={getStatusVariant(item.status)}>{item.status || 'Belum Dibaca'}</Badge>
+                
+                <div className="flex items-center gap-2">
+                  <button 
+                     onClick={() => openDeleteModal(item)}
+                     disabled={deleteLoading === item.id}
+                     className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                     title="Hapus"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                     onClick={() => window.location.href = `/kepala/disposisi/${item.id}`}
+                     className="flex items-center gap-2 px-4 py-2 bg-white text-black hover:bg-zinc-200 rounded-lg text-xs font-bold transition-colors shadow-lg shadow-white/5"
+                  >
+                    <Eye className="w-3 h-3" />
+                    Detail
+                  </button>
+                </div>
+              </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              {disposisi.length === 0 ? 'Belum ada disposisi' : 'Tidak ada disposisi yang cocok'}
-            </h3>
-            <p className="text-gray-500 max-w-md mx-auto">
-              {disposisi.length === 0
-                ? 'Belum ada disposisi yang dibuat. Silakan buat disposisi baru.'
-                : 'Coba ubah kata kunci pencarian atau filter status.'
-              }
+          ))}
+        </div>
+      )}
+
+      {/* 3. Minimalist Pagination */}
+      {totalItems > 0 && (
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 border-t border-white/5">
+          <p className="text-xs text-zinc-500">
+            Menampilkan <span className="text-white font-medium">{startIndex + 1}-{Math.min(startIndex + itemsPerPage, totalItems)}</span> dari <span className="text-white font-medium">{totalItems}</span> data
+          </p>
+          
+          <div className="flex items-center gap-2 bg-zinc-900/50 p-1 rounded-full border border-white/5">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-medium text-zinc-300 px-2">
+              Halaman {currentPage}
+            </span>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Delete Modal (Glassmorphism) */}
+      {showDeleteModal && selectedDisposisi && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity" 
+            onClick={closeDeleteModal}
+          />
+          <div className="relative bg-zinc-950 border border-white/10 rounded-3xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
+              <AlertTriangle className="h-6 w-6 text-red-500" />
+            </div>
+            
+            <h3 className="text-xl font-light text-white mb-2">Hapus Disposisi?</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed mb-6">
+              Anda akan menghapus disposisi perihal <strong className="text-white">{selectedDisposisi.perihal}</strong>. 
+              Tindakan ini tidak dapat dibatalkan.
             </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-2">
-            {currentItems.map((item) => (
-              <article
-                key={item.id}
-                className="group relative bg-white space-y-2 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-200"
+
+            <div className="flex gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 px-4 py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 rounded-xl font-medium transition-colors border border-white/5"
               >
-                {/* Header */}
-                <div className="border-b border-gray-50/50 pb-3">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900">
-                        {item.perihal || 'Tanpa Perihal'}
-                      </h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                        <span className="font-medium text-gray-700">Nomor Surat:</span> {item.nomor_surat || '-'} •{' '}
-                        <span className="font-medium text-gray-700">Dari:</span> {item.asal_instansi || '-'}
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center px-4 py-2 bg-indigo-50 text-indigo-800 rounded-full text-sm font-medium shadow-sm">
-                      {formatDate(item.created_at)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Metadata Grid */}
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mt-0.5">
-                        <User className="w-5 h-5 text-teal-400" />
-                      </div>
-                      <div>
-                        <p className="text-gray-500 font-medium">Disposisi Kepada</p>
-                        <p className="text-gray-800">{item.disposisi_kepada_jabatan || '-'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mt-0.5">
-                        <AlertCircle className="w-5 h-5 text-teal-400" />
-                      </div>
-                      <div>
-                        <p className="text-gray-500 font-medium">Sifat</p>
-                        <SifatBadge sifat={item.sifat || 'Biasa'} />
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <div>
-                        <p className="text-gray-500 font-medium">Status</p>
-                        <StatusBadge status={item.status || 'belum dibaca'} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tombol Aksi */}
-                <div className="space-y-2 pt-3 border-t border-gray-50/50">
-                  <button
-                    onClick={() => window.location.href = `/kepala/disposisi/${item.id}`}
-                    className="inline-flex w-full justify-center items-center gap-2 px-4 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-full text-sm font-medium shadow transition-colors duration-200"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Lihat Detail
-                  </button>
-
-                  <button
-                    onClick={() => openDeleteModal(item)}
-                    disabled={deleteLoading === item.id}
-                    className={`inline-flex w-full justify-center items-center gap-2 px-4 py-3 rounded-full text-sm font-medium shadow transition-colors duration-200 ${
-                      deleteLoading === item.id
-                        ? 'bg-red-400 text-white cursor-not-allowed opacity-75'
-                        : 'bg-white border border-red-400 hover:-translate-y-0.5 text-red-400'
-                    }`}
-                  >
-                    {deleteLoading === item.id ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Menghapus...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4" />
-                        Hapus Disposisi
-                      </>
-                    )}
-                  </button>
-                </div>
-              </article>
-            ))}
+                Batal
+              </button>
+              <button
+                onClick={() => handleDelete(selectedDisposisi.id)}
+                disabled={deleteLoading === selectedDisposisi.id}
+                className="flex-1 px-4 py-3 bg-white text-black hover:bg-zinc-200 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+              >
+                {deleteLoading === selectedDisposisi.id ? (
+                  <LoadingSpinner className="w-4 h-4" />
+                ) : (
+                  'Ya, Hapus'
+                )}
+              </button>
+            </div>
           </div>
-        )}
-
-        {/* Pagination */}
-        {totalItems > 0 && <Pagination />}
-
-        {/* Delete Confirmation Modal */}
-        <DeleteModal />
-      </main>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,9 +1,7 @@
-import { FileText, X, CheckCircle, Download, Calendar, User, Building2, MessageSquare, Trash2, AlertTriangle, Search, Filter, Loader, Mail, RefreshCcw, Clock, AlertCircle } from 'lucide-react';
+import { FileText, X, CheckCircle, Download, Calendar, User, Building2, MessageSquare, Trash2, AlertTriangle, Search, Filter, Loader, Mail, Clock, AlertCircle, ChevronDown, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../../utils/api';
 import { useState, useEffect } from 'react';
-import LoadingSpinner from '../Ui/LoadingSpinner';
-import StatCard from '../Ui/StatCard';
 import isImageFile from '../../utils/isImageFile';
 import ImageModal from '../Ui/ImageModal';
 
@@ -67,17 +65,8 @@ const AdminDaftarSuratMasuk = () => {
       setSuratData(suratWithDisposisiId);
     } catch (err) {
       console.error('Error fetching data:', err);
-      if (err.response) {
-        const errorMessage = err.response.data?.error || err.response.data?.message || `Server error: ${err.response.status}`;
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } else if (err.request) {
-        setError('Tidak ada respon dari server. Pastikan server backend berjalan.');
-        toast.error('Tidak ada respon dari server');
-      } else {
-        setError('Terjadi kesalahan saat mengambil data');
-        toast.error('Terjadi kesalahan saat mengambil data');
-      }
+      setError(err.response?.data?.error || 'Gagal memuat data');
+      toast.error('Gagal memuat data');
     } finally {
       setLoading(false);
     }
@@ -92,26 +81,42 @@ const AdminDaftarSuratMasuk = () => {
     });
   };
 
-  // ✅ STATUS BADGE — DISAMAKAN DENGAN GAYA SURAT MASUK
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      'belum dibaca': {
-        color: 'bg-green-100 text-green-800',
-        text: 'Belum Dibaca'
-      },
-      'sudah dibaca': {
-        color: 'bg-gray-100 text-gray-800',
-        text: 'Sudah Dibaca'
-      }
-    };
+  // --- NEW STYLE HELPERS ---
 
-    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800', text: status };
+  const getStatusBadge = (status) => {
+    const isRead = status === 'sudah dibaca';
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        {config.text}
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+        isRead 
+        ? 'bg-white text-black border-white' 
+        : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+      }`}>
+        {isRead ? 'Selesai' : 'Unread'}
       </span>
     );
   };
+
+  const StatItem = ({ label, count, icon: Icon, active }) => (
+    <div className={`relative overflow-hidden p-6 rounded-3xl border transition-all duration-300 ${
+        active 
+        ? 'bg-white text-black border-white' 
+        : 'bg-zinc-900/50 backdrop-blur-sm border-white/5 text-white hover:border-white/20'
+    }`}>
+        <div className="flex justify-between items-start mb-4">
+            <div className={`p-2 rounded-xl border ${
+                active ? 'bg-black/5 border-black/10' : 'bg-white/5 border-white/5'
+            }`}>
+                <Icon className={`w-5 h-5 ${active ? 'text-black' : 'text-zinc-400'}`} />
+            </div>
+        </div>
+        <div>
+            <h3 className="text-4xl font-light tracking-tight mb-1">{count}</h3>
+            <p className={`text-[10px] uppercase tracking-widest font-bold ${
+                active ? 'text-black/60' : 'text-zinc-500'
+            }`}>{label}</p>
+        </div>
+    </div>
+  );
 
   const handleDownloadPDF = async (suratId, nomorSurat) => {
     setIsDownloading(true);
@@ -121,7 +126,7 @@ const AdminDaftarSuratMasuk = () => {
       const disposisiId = surat?.disposisi_id;
 
       if (!disposisiId) {
-        toast.error('Disposisi tidak ditemukan untuk surat ini');
+        toast.error('Disposisi belum dibuat oleh Kepala Dinas');
         return;
       }
 
@@ -130,10 +135,7 @@ const AdminDaftarSuratMasuk = () => {
         onDownloadProgress: (progressEvent) => {
           const total = progressEvent.total;
           const current = progressEvent.loaded;
-          if (total) {
-            const percentage = Math.round((current / total) * 100);
-            setDownloadProgress(percentage);
-          }
+          if (total) setDownloadProgress(Math.round((current / total) * 100));
         }
       });
 
@@ -147,53 +149,21 @@ const AdminDaftarSuratMasuk = () => {
       window.URL.revokeObjectURL(url);
       toast.success('PDF berhasil diunduh!');
     } catch (err) {
-      console.error('Error downloading PDF:', err);
-      if (err.response) {
-        const errorMessage = err.response.data?.error || 'Gagal mengunduh PDF';
-        toast.error(errorMessage);
-      } else if (err.request) {
-        toast.error('Tidak ada respon dari server saat mengunduh PDF');
-      } else {
-        toast.error('Terjadi kesalahan saat mengunduh PDF');
-      }
+      toast.error('Gagal mengunduh PDF');
     } finally {
       setIsDownloading(false);
       setDownloadProgress(0);
     }
   };
 
-  const openDeleteModal = (surat) => {
-    setDeleteModal({
-      isOpen: true,
-      suratId: surat.id,
-      suratInfo: {
-        asal_instansi: surat.asal_instansi,
-        tujuan_jabatan: surat.tujuan_jabatan,
-        created_at: surat.created_at
-      }
-    });
-  };
-
-  const closeDeleteModal = () => {
-    setDeleteModal({ isOpen: false, suratId: null, suratInfo: null });
-  };
-
   const handleConfirmDelete = async (id) => {
     try {
       await api.delete(`/surat-masuk/${id}`);
-      toast.success('Surat berhasil dihapus');
-      closeDeleteModal();
+      toast.success('Surat dihapus');
+      setDeleteModal({ isOpen: false, suratId: null, suratInfo: null });
       fetchAllData();
     } catch (error) {
-      console.error('Delete error:', error);
-      if (error.response) {
-        const errorMessage = error.response.data?.error || error.response.data?.message || 'Gagal menghapus surat';
-        toast.error(errorMessage);
-      } else if (error.request) {
-        toast.error('Tidak ada respon dari server');
-      } else {
-        toast.error('Terjadi kesalahan saat menghapus surat');
-      }
+      toast.error('Gagal menghapus');
     }
   };
 
@@ -202,429 +172,269 @@ const AdminDaftarSuratMasuk = () => {
     setStatusFilter('all');
   };
 
-  // Calculate statistics
+  // Stats
   const totalSurat = suratData.length;
   const belumDibaca = suratData.filter(surat => surat.status === 'belum dibaca').length;
   const sudahDibaca = suratData.filter(surat => surat.status === 'sudah dibaca').length;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner />
-      </div>
+        <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+            <span className="text-xs text-zinc-500 uppercase tracking-widest animate-pulse">Memuat Database...</span>
+        </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md mx-auto shadow-sm">
-            <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900">Terjadi Kesalahan</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={fetchAllData}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-full font-medium transition shadow"
-            >
-              Coba Lagi
-            </button>
-          </div>
+      <div className="flex flex-col justify-center items-center py-20 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20">
+            <AlertCircle className="w-8 h-8 text-red-500" />
         </div>
+        <h3 className="text-white font-semibold text-lg mb-2">Terjadi Kesalahan</h3>
+        <p className="text-zinc-500 text-sm mb-6 max-w-xs mx-auto">{error}</p>
+        <button onClick={fetchAllData} className="px-6 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-zinc-200 transition">
+            Coba Lagi
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <main className="">
-
-        {/* ✅ Stat Cards — DISAMAKAN DENGAN GAYA SURAT MASUK */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
-          <StatCard
-            title="Total Surat"
-            count={totalSurat}
-            icon={Mail}
-            bgColor="bg-white"
-            textColor="text-black"
-            iconBg="bg-white"
-            iconColor="text-teal-400"
-            borderColor="border-slate-200"
-          />
-          <StatCard
-            title="Belum Dibaca"
-            count={belumDibaca}
-            icon={Clock}
-            bgColor="bg-white"
-            textColor="text-black"
-            iconBg="bg-gray-500"
-            iconColor="text-white"
-            borderColor="border-slate-200"
-          />
-          <StatCard
-            title="Sudah Dibaca"
-            count={sudahDibaca}
-            icon={CheckCircle}
-            bgColor="bg-black"
-            textColor="text-white"
-            iconBg="bg-white"
-            iconColor="text-black"
-            borderColor="border-slate-200"
-          />
+    <div className="w-full max-w-7xl mx-auto pb-20">
+        
+        {/* 1. STATS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <StatItem label="Total Surat" count={totalSurat} icon={Mail} />
+            <StatItem label="Pending" count={belumDibaca} icon={Clock} />
+            <StatItem label="Selesai" count={sudahDibaca} icon={CheckCircle} active={true} />
         </div>
 
-        {/* ✅ Search and Filter Section — DISAMAKAN DENGAN GAYA SURAT MASUK */}
-        <div className="mb-6 p-4 bg-white rounded-2xl shadow-sm border border-slate-200">
-          <div className="flex gap-4 items-center">
-
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Cari berdasarkan instansi, tujuan..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 text-sm rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 hover:bg-gray-50 rounded-r-full transition-all"
-                >
-                  <X className="h-5 w-5 text-gray-500" />
-                </button>
-              )}
-            </div>
-
-            {/* Filter Status */}
-            <div className="relative flex items-center">
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="p-2 rounded-full hover:bg-gray-100 transition focus:outline-none"
-                aria-label="Filter status"
-              >
-                <Filter className="w-5 h-5 text-gray-600" />
-              </button>
-
-              {/* Dropdown */}
-              {isDropdownOpen && (
-                <div className="absolute top-full mt-2 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 w-48">
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        setStatusFilter("all");
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${statusFilter === "all" ? "bg-indigo-50 text-indigo-700" : "text-gray-800"
-                        }`}
-                    >
-                      Semua Status
-                    </button>
-                    <button
-                      onClick={() => {
-                        setStatusFilter("belum dibaca");
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${statusFilter === "belum dibaca" ? "bg-indigo-50 text-indigo-700" : "text-gray-800"
-                        }`}
-                    >
-                      Belum Dibaca
-                    </button>
-                    <button
-                      onClick={() => {
-                        setStatusFilter("sudah dibaca");
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${statusFilter === "sudah dibaca" ? "bg-indigo-50 text-indigo-700" : "text-gray-800"
-                        }`}
-                    >
-                      Sudah Dibaca
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-
-          </div>
-          {/* Clear Filters Button */}
-          {(searchTerm || statusFilter !== 'all') && (
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2.5 text-gray-700 border mt-3 border-gray-300 rounded-full hover:bg-gray-50 font-medium transition flex items-center gap-2"
-            >
-              <X className="h-4 w-4" /> Reset
-            </button>
-          )}
-
-          {/* Results Info */}
-          <div className="flex items-center justify-between text-sm text-gray-600 mt-4">
-            <span>
-              Menampilkan {filteredData.length} dari {suratData.length} surat
-              {searchTerm && (
-                <span className="ml-1">
-                  untuk pencarian "{searchTerm}"
-                </span>
-              )}
-              {statusFilter !== 'all' && (
-                <span className="ml-1">
-                  dengan status {statusFilter === 'belum dibaca' ? 'Belum Dibaca' : 'Sudah Dibaca'}
-                </span>
-              )}
-            </span>
-          </div>
-        </div>
-
-        {/* ✅ Card Surat — SEMUA INFO LANGSUNG DITAMPILKAN, TANPA MODAL */}
-        {filteredData.length === 0 && suratData.length > 0 ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-              <FileText className="w-10 h-10 text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Tidak Ada Hasil yang Cocok</h3>
-            <p className="text-gray-500 max-w-md mx-auto">
-              Coba ubah kata kunci pencarian atau filter status.
-            </p>
-            <button
-              onClick={clearFilters}
-              className="mt-4 text-indigo-600 hover:text-indigo-800 font-medium"
-            >
-              Reset semua filter
-            </button>
-          </div>
-        ) : suratData.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-              <FileText className="w-10 h-10 text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Tidak Ada Surat Masuk</h3>
-            <p className="text-gray-500">Belum ada surat masuk yang tersedia.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredData.map((surat) => {
-              return (
-                <article
-                  key={surat.id}
-                  className="group relative bg-white space-y-3 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-200"
-                >
-                  {/* Header */}
-                  <div className="border-b border-gray-50/50 pb-3">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900">
-                          {surat.asal_instansi}
-                        </h3>
-                        <p className="text-gray-600 text-sm leading-relaxed">
-                          <span className="font-medium text-gray-700">Tujuan:</span> {surat.tujuan_jabatan?.replace(/-/g, ' ') || '-'}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        {getStatusBadge(surat.status)}
-                        <span className="text-xs text-gray-500 mt-1">{formatDate(surat.created_at)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Metadata Grid */}
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-start gap-2">
-                        <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mt-0.5">
-                          <Calendar className="w-5 h-5 text-teal-400" />
-                        </div>
-                        <div>
-                          <p className="text-gray-500 font-medium">Tanggal Dibuat</p>
-                          <p className="text-gray-800">{formatDate(surat.created_at)}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2">
-                        <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mt-0.5">
-                          <User className="w-5 h-5 text-teal-400" />
-                        </div>
-                        <div>
-                          <p className="text-gray-500 font-medium">Tujuan Jabatan</p>
-                          <p className="text-gray-800 capitalize">{surat.tujuan_jabatan?.replace(/-/g, ' ')}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Keterangan */}
-                  <div className="border-t border-gray-50/50 pt-3">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Keterangan:
-                    </h4>
-                    <p className="text-gray-700 leading-relaxed text-sm">
-                      {surat.keterangan ? (
-                        surat.keterangan
-                      ) : (
-                        <span className="text-gray-400 italic">Tidak ada keterangan tambahan.</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {surat.photos && surat.photos.length > 0 && (
-                    <div className="p-4">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <FileText className="w-5 h-5" />
-                        Lampiran: ({surat.photos.length})
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {surat.photos.map((photo) => {
-                          const isImage = isImageFile(photo);
-                          return (
-                            <div
-                              key={photo.id}
-                              onClick={() => {
-                                if (isImage) {
-                                  setSelectedImage(photo.url);
-                                } else {
-                                  window.open(photo.url, '_blank', 'noopener,noreferrer');
-                                }
-                              }}
-                              className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
-                            >
-                              {isImage ? (
-                                <img
-                                  src={photo.url}
-                                  alt={photo.filename}
-                                  className="w-20 h-20 object-cover group-hover:brightness-110 transition-transform duration-500 rounded-lg shadow-lg"
-                                  onError={(e) => {
-                                    e.target.src = 'https://via.placeholder.com/200?text=No+Image';
-                                  }}
-                                />
-                              ) : (
-                                <div className="text-[#D9534F] flex flex-col items-center justify-center w-20 h-20 bg-gray-100 rounded-lg">
-                                  <FileText className="w-8 h-8" />
-                                  <p className="text-xs font-bold mt-1 text-center break-words">
-                                    {photo.filename.split('.').pop()?.toUpperCase() || 'FILE'}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tombol Aksi — HANYA DOWNLOAD & HAPUS */}
-                  <div className="space-y-3 pt-3 border-t border-gray-50/50">
-                    {surat.has_disposisi === true && surat.disposisi_id && (
-                      <button
-                        onClick={() => handleDownloadPDF(surat.id, surat.nomor_surat)}
-                        disabled={isDownloading}
-                        className={`inline-flex w-full justify-center items-center gap-2 px-4 py-3 rounded-full text-sm font-medium shadow transition-all duration-200 ${isDownloading
-                          ? 'bg-white border border-green-400 text-green-400 cursor-not-allowed opacity-75'
-                          : 'bg-white border border-green-400 hover:-translate-y-0.5 text-green-400'
-                          }`}
-                      >
-                        {isDownloading ? (
-                          <>
-                            <Loader className="w-4 h-4 animate-spin" />
-                            {downloadProgress}%
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-4 h-4" />
-                            Download Lembar Disposisi
-                          </>
-                        )}
-                      </button>
+        {/* 2. FILTER & SEARCH BAR */}
+        <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-2xl p-4 mb-8 sticky top-4 z-20 shadow-2xl shadow-black/20">
+            <div className="flex flex-col md:flex-row gap-4">
+                
+                {/* Search */}
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input 
+                        type="text"
+                        placeholder="Cari instansi, nomor surat, atau keterangan..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 transition-all"
+                    />
+                    {searchTerm && (
+                        <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full text-zinc-500 hover:text-white transition">
+                            <X className="w-3 h-3" />
+                        </button>
                     )}
+                </div>
 
-                    <button
-                      onClick={() => openDeleteModal(surat)}
-                      className="inline-flex w-full justify-center items-center gap-2 px-4 py-3 bg-white border border-red-400 hover:-translate-y-0.5 text-red-400 rounded-full text-sm font-medium shadow transition-all duration-200"
+                {/* Filter Dropdown */}
+                <div className="relative">
+                    <button 
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className={`flex items-center justify-between gap-3 w-full md:w-48 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                            statusFilter !== 'all' 
+                            ? 'bg-white text-black border-white' 
+                            : 'bg-zinc-950 text-zinc-300 border-white/10 hover:border-white/30'
+                        }`}
                     >
-                      <Trash2 className="w-4 h-4" />
-                      Hapus
+                        <span className="flex items-center gap-2">
+                            <Filter className="w-4 h-4" />
+                            {statusFilter === 'all' ? 'Semua Status' : statusFilter === 'belum dibaca' ? 'Pending' : 'Selesai'}
+                        </span>
+                        <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
 
-        {/* ✅ Delete Confirmation Modal — TETAP ADA, HANYA UNTUK HAPUS */}
-        {deleteModal.isOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-100 rounded-full">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">Konfirmasi Hapus</h3>
-                      <p className="text-sm text-gray-500">Tindakan ini tidak dapat dibatalkan</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={closeDeleteModal}
-                    className="p-2 hover:bg-gray-100 rounded-full transition"
-                  >
-                    <X className="h-5 w-5 text-gray-600" />
-                  </button>
+                    {isDropdownOpen && (
+                        <div className="absolute top-full right-0 mt-2 w-48 bg-zinc-900 border border-white/10 rounded-xl shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-100">
+                            <button onClick={() => { setStatusFilter('all'); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-3 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition">
+                                Semua Status
+                            </button>
+                            <button onClick={() => { setStatusFilter('belum dibaca'); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-3 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition">
+                                Belum Dibaca
+                            </button>
+                            <button onClick={() => { setStatusFilter('sudah dibaca'); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-3 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition">
+                                Sudah Dibaca
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                <div className="mb-6">
-                  <p className="text-gray-800 font-medium mb-3">
-                    Apakah Anda yakin ingin menghapus surat dari:
-                  </p>
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Building2 className="w-4 h-4 text-gray-600" />
-                        <span className="font-semibold text-gray-900">
-                          {deleteModal.suratInfo?.asal_instansi}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="w-4 h-4 text-gray-600" />
-                        <span className="text-gray-900 capitalize">
-                          {deleteModal.suratInfo?.tujuan_jabatan?.replace(/-/g, ' ')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-4 h-4 text-gray-600" />
-                        <span className="text-gray-900">
-                          {formatDate(deleteModal.suratInfo?.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={closeDeleteModal}
-                    className="px-4 py-2.5 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 font-medium transition"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={() => handleConfirmDelete(deleteModal.suratId)}
-                    className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full font-medium transition"
-                  >
-                    Hapus
-                  </button>
-                </div>
-              </div>
+                {/* Reset Button */}
+                {(searchTerm || statusFilter !== 'all') && (
+                    <button 
+                        onClick={clearFilters}
+                        className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 text-sm font-medium transition-all"
+                    >
+                        Reset
+                    </button>
+                )}
             </div>
-          </div>
+            
+            {/* Filter Info */}
+            <div className="mt-3 px-1 flex justify-between items-center text-[10px] uppercase tracking-widest text-zinc-500 font-medium">
+                <span>Total Data: {filteredData.length}</span>
+                {statusFilter !== 'all' && <span>Filter: {statusFilter}</span>}
+            </div>
+        </div>
+
+        {/* 3. CONTENT GRID */}
+        {filteredData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-3xl bg-zinc-900/20">
+                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-white/5">
+                    <Search className="w-6 h-6 text-zinc-600" />
+                </div>
+                <h3 className="text-white font-medium mb-1">Tidak ditemukan</h3>
+                <p className="text-zinc-500 text-sm">Coba ubah kata kunci atau filter anda.</p>
+                <button onClick={clearFilters} className="mt-4 text-xs text-white underline underline-offset-4">Hapus Filter</button>
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredData.map((surat) => (
+                    <article key={surat.id} className="group bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 hover:border-white/20 transition-all duration-300 flex flex-col h-full">
+                        
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-white leading-tight mb-1 group-hover:text-zinc-100 transition-colors">
+                                    {surat.asal_instansi}
+                                </h3>
+                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                    <User className="w-3 h-3" />
+                                    <span className="capitalize">{surat.tujuan_jabatan?.replace(/-/g, ' ') || '-'}</span>
+                                </div>
+                            </div>
+                            {getStatusBadge(surat.status)}
+                        </div>
+
+                        {/* Metadata Grid */}
+                        <div className="grid grid-cols-2 gap-4 mb-6 bg-white/5 rounded-2xl p-4 border border-white/5">
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Tanggal</p>
+                                <div className="flex items-center gap-2 text-zinc-300 text-xs">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    {formatDate(surat.created_at)}
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Agenda</p>
+                                <div className="flex items-center gap-2 text-zinc-300 text-xs">
+                                    <FileText className="w-3.5 h-3.5" />
+                                    {surat.nomor_surat}
+                                </div>
+                            </div>
+                            <div className="col-span-2 pt-2 border-t border-white/5">
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Keterangan</p>
+                                <p className="text-xs text-zinc-400 leading-relaxed italic line-clamp-2">
+                                    {surat.keterangan || "Tidak ada keterangan."}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Lampiran */}
+                        {surat.photos && surat.photos.length > 0 && (
+                            <div className="mb-6">
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3 flex items-center gap-2">
+                                    <ImageIcon className="w-3 h-3" /> Lampiran ({surat.photos.length})
+                                </p>
+                                <div className="flex flex-wrap gap-3">
+                                    {surat.photos.slice(0, 4).map((photo) => {
+                                        const isImage = isImageFile(photo);
+                                        return (
+                                            <div 
+                                                key={photo.id}
+                                                onClick={() => isImage ? setSelectedImage(photo.url) : window.open(photo.url, '_blank')}
+                                                className="w-12 h-12 rounded-lg bg-zinc-950 border border-white/10 overflow-hidden cursor-pointer hover:border-white/40 transition-all flex items-center justify-center relative group/img"
+                                            >
+                                                {isImage ? (
+                                                    <img src={photo.url} alt="Lampiran" className="w-full h-full object-cover opacity-70 group-hover/img:opacity-100 transition-opacity" />
+                                                ) : (
+                                                    <FileText className="w-5 h-5 text-zinc-500 group-hover/img:text-white transition-colors" />
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                    {surat.photos.length > 4 && (
+                                        <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-white/5 flex items-center justify-center text-xs text-zinc-400">
+                                            +{surat.photos.length - 4}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Actions (Pushed to bottom) */}
+                        <div className="mt-auto grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
+                            {surat.has_disposisi === true && surat.disposisi_id ? (
+                                <button 
+                                    onClick={() => handleDownloadPDF(surat.id, surat.nomor_surat)}
+                                    disabled={isDownloading}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                                >
+                                    {isDownloading ? <Loader className="w-3 h-3 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                                    Download
+                                </button>
+                            ) : (
+                                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-500 text-xs font-medium rounded-xl border border-transparent cursor-not-allowed">
+                                    <Clock className="w-3.5 h-3.5" /> Menunggu Disposisi
+                                </div>
+                            )}
+
+                            <button 
+                                onClick={() => setDeleteModal({ isOpen: true, suratId: surat.id, suratInfo: surat })}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-500 border border-rose-500/20 text-xs font-bold rounded-xl hover:bg-rose-500 hover:text-white transition-all"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Hapus
+                            </button>
+                        </div>
+
+                    </article>
+                ))}
+            </div>
         )}
-      </main>
-      <ImageModal
-        selectedImage={selectedImage}
-        setSelectedImage={setSelectedImage}
-      />
+
+        {/* 4. MODALS */}
+        
+        {/* Delete Modal */}
+        {deleteModal.isOpen && (
+             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                <div className="bg-zinc-950 border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+                    <div className="p-6 text-center">
+                        <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="w-8 h-8 text-rose-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-white mb-2">Hapus Data?</h3>
+                        <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
+                            Data dari <span className="text-white font-medium">{deleteModal.suratInfo?.asal_instansi}</span> akan dihapus permanen.
+                        </p>
+                        <div className="flex gap-3 justify-center">
+                            <button 
+                                onClick={() => setDeleteModal({ isOpen: false, suratId: null, suratInfo: null })} 
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 hover:text-white transition-all"
+                            >
+                                Batal
+                            </button>
+                            <button 
+                                onClick={() => handleConfirmDelete(deleteModal.suratId)} 
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-900/20 transition-all"
+                            >
+                                Hapus Permanen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        <ImageModal
+            selectedImage={selectedImage}
+            setSelectedImage={setSelectedImage}
+        />
     </div>
   );
 };

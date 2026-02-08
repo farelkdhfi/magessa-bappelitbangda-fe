@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, List, BookPlus } from 'lucide-react';
+import { Plus, List, BookPlus, LayoutGrid } from 'lucide-react';
 import AdminBuatSuratMasuk from '../../components/Admin/AdminBuatSuratMasuk';
 import AdminDaftarSuratMasuk from '../../components/Admin/AdminDaftarSuratMasuk';
 
@@ -7,61 +7,72 @@ const AdminSuratMasuk = () => {
     const [activeTab, setActiveTab] = useState('buat');
 
     return (
-        <div className="min-h-screen">
-            {/* Card Wrapper - konsisten dengan Surat Keluar */}
-            <div className="hidden md:block bg-white pt-4 px-4 rounded-3xl shadow-lg">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-x-3">
-                        <div className="p-3 bg-white text-teal-400 rounded-xl shadow-lg">
-                            <BookPlus className="w-5 h-5" />
+        <div className="min-h-screen text-white font-sans selection:bg-white/20">
+            
+            {/* Header Section with Integrated Tabs */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+                
+                {/* Title Block */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white/5 rounded-lg border border-white/5 backdrop-blur-sm">
+                            <BookPlus className="w-5 h-5 text-zinc-400" />
                         </div>
-                        <div>
-                            <h1 className="text-lg font-bold">Surat Masuk</h1>
-                            <p className="text-sm font-medium">Kelola surat masuk untuk kepala kantor</p>
-                        </div>
+                        <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">
+                            Management Console
+                        </p>
                     </div>
+                    <h1 className="text-3xl font-light tracking-tight text-white">
+                        Admin <span className="font-semibold text-zinc-400">Surat Masuk</span>
+                    </h1>
                 </div>
 
-                {/* Tab Navigation */}
-                <div className="flex space-x-1 mb-4 bg-white p-1 w-fit rounded-xl border-2 border-[#EDE6E3] shadow-sm">
+                {/* Modern Segmented Control Tabs */}
+                <div className="bg-zinc-900/80 backdrop-blur-md border border-white/5 p-1.5 rounded-2xl flex items-center gap-1 shadow-xl shadow-black/20">
                     <button
                         onClick={() => setActiveTab('buat')}
-                        className={`flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-300 ${
                             activeTab === 'buat'
-                                ? 'bg-black text-white shadow-md'
-                                : 'text-slate-700 hover:bg-slate-100'
+                                ? 'bg-white text-black shadow-lg shadow-white/5 scale-[1.02]'
+                                : 'text-zinc-500 hover:text-white hover:bg-white/5'
                         }`}
                     >
-                        <Plus className="w-4 h-4" />
-                        Buat Surat
+                        <Plus className={`w-4 h-4 ${activeTab === 'buat' ? 'text-black' : 'text-zinc-500'}`} />
+                        Buat Baru
                     </button>
 
                     <button
                         onClick={() => setActiveTab('daftar')}
-                        className={`flex items-center gap-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-300 ${
                             activeTab === 'daftar'
-                                ? 'bg-black text-white shadow-md'
-                                : 'text-slate-700 hover:bg-slate-100'
+                                ? 'bg-white text-black shadow-lg shadow-white/5 scale-[1.02]'
+                                : 'text-zinc-500 hover:text-white hover:bg-white/5'
                         }`}
                     >
-                        <List className="w-4 h-4" />
-                        Daftar Surat
+                        <List className={`w-4 h-4 ${activeTab === 'daftar' ? 'text-black' : 'text-zinc-500'}`} />
+                        Database
                     </button>
                 </div>
             </div>
 
-            {/* Tab Content - tetap di luar card agar tetap muncul di mobile */}
-            <div className="transition-all duration-300">
-                {activeTab === 'buat' ? (
-                    <div className="animate-fadeIn">
-                        <AdminBuatSuratMasuk />
-                    </div>
-                ) : (
-                    <div className="animate-fadeIn">
-                        <AdminDaftarSuratMasuk />
-                    </div>
-                )}
+            {/* Content Area - Wrapped in Glassmorphism if needed by children, or transparent */}
+            <div className="relative">
+                {/* Decorative Background Glow for Content */}
+                <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-white/5 rounded-full blur-[100px] -z-10 opacity-20 pointer-events-none" />
+
+                <div className="transition-all duration-500 ease-in-out">
+                    {activeTab === 'buat' ? (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            {/* Pastikan komponen AdminBuatSuratMasuk juga di-update stylenya agar selaras */}
+                            <AdminBuatSuratMasuk />
+                        </div>
+                    ) : (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            {/* Pastikan komponen AdminDaftarSuratMasuk juga di-update stylenya agar selaras */}
+                            <AdminDaftarSuratMasuk />
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { api } from '../../utils/api';
 import {
-  FileText, AlertCircle, CheckCircle, Upload, Plus, X, Eye, FileIcon, Send
+  FileText, Calendar, Building2, Upload, Plus, X, Eye, FileIcon, Send, Paperclip, AlignLeft, Hash
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import InputField from '../InputField';
 
 const AdminBuatSuratKeluar = () => {
   const [formData, setFormData] = useState({
@@ -16,7 +17,6 @@ const AdminBuatSuratKeluar = () => {
   const [files, setFiles] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
   const [previewModal, setPreviewModal] = useState({ isOpen: false, imageUrl: '', index: null, isPdf: false });
 
   const MAX_FILES = 10;
@@ -145,257 +145,245 @@ const AdminBuatSuratKeluar = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getFileIcon = (file) => {
-    if (file.type === 'application/pdf') {
-      return <FileIcon className="w-8 h-8 text-red-500" />;
-    }
-    return <FileIcon className="w-8 h-8 text-blue-500" />;
-  };
+  }; 
 
   return (
-    <div className="min-h-screen">
-      <form onSubmit={handleSubmit} className="space-y-2">
-        {/* Header Section */}
-        <div className="bg-white p-4 rounded-2xl border-2 border-[#EDE6E3] shadow-md hover:shadow-lg transition-all duration-300">
-          <div className="flex items-center gap-x-1 mb-5">
-            <div className="p-2.5 bg-white rounded-xl shadow-md">
-              <FileText className="h-5 w-5 text-teal-400" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold" >Buat Surat Keluar</h2>
-            </div>
-          </div>
-
-          {/* Form Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2" >
-                Nama Surat <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="nama_surat"
-                value={formData.nama_surat}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('nama_surat')}
-                onBlur={() => setFocusedField(null)}
-                required
-                className={`w-full px-4 py-3 rounded-xl outline-none border-2 transition-all duration-300  ${focusedField === 'nama_surat'
-                  ? 'border-teal-400 shadow-lg ring-4 ring-teal-400/20'
-                  : 'border-[#EDE6E3] hover:border-teal-400'}`}
-                
-                placeholder="Masukkan nama surat"
-              />
+    <div className="w-full max-w-5xl mx-auto pb-20">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* SECTION 1: DATA UTAMA */}
+        <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -z-10 pointer-events-none opacity-20"/>
+            
+            <div className="flex items-center gap-3 mb-8 border-b border-white/5 pb-4">
+                <div className="p-2 bg-white/5 rounded-lg border border-white/5">
+                    <FileText className="w-5 h-5 text-zinc-300" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-semibold text-white">Detail Surat Keluar</h2>
+                    <p className="text-xs text-zinc-500">Informasi surat yang akan dikirim</p>
+                </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2" >
-                Tanggal Surat <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="tanggal_surat"
-                value={formData.tanggal_surat}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('tanggal_surat')}
-                onBlur={() => setFocusedField(null)}
-                required
-                className={`w-full px-4 py-3 rounded-xl outline-none border-2 transition-all duration-300  ${focusedField === 'tanggal_surat'
-                  ? 'border-teal-400 shadow-lg ring-4 ring-teal-400/20'
-                  : 'border-[#EDE6E3] hover:border-teal-400'}`}
-                
-              />
-            </div>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Kolom Kiri */}
+                <div className="space-y-6">
+                    <InputField
+                        label="Nama / Perihal Surat"
+                        name="nama_surat"
+                        icon={Hash}
+                        placeholder="Contoh: Undangan Rapat Koordinasi"
+                        value={formData.nama_surat}
+                        onChange={handleChange}
+                        required
+                    />
+                     <InputField 
+                        label="Ditujukan Kepada"
+                        name="ditujukan_ke"
+                        icon={Building2}
+                        placeholder="Contoh: Dinas Kesehatan"
+                        value={formData.ditujukan_ke}
+                        onChange={handleChange}
+                        required
+                    />
+                    <InputField 
+                        label="Tanggal Surat"
+                        name="tanggal_surat"
+                        type="date"
+                        icon={Calendar}
+                        value={formData.tanggal_surat}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-semibold mb-2" >
-              Ditujukan Ke <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="ditujukan_ke"
-              value={formData.ditujukan_ke}
-              onChange={handleChange}
-              onFocus={() => setFocusedField('ditujukan_ke')}
-              onBlur={() => setFocusedField(null)}
-              required
-              className={`w-full px-4 py-3 rounded-xl outline-none border-2 transition-all duration-300  ${focusedField === 'ditujukan_ke'
-                ? 'border-teal-400 shadow-lg ring-4 ring-teal-400/20'
-                : 'border-[#EDE6E3] hover:border-teal-400'}`}
-              
-              placeholder="Masukkan tujuan surat"
-            />
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-semibold mb-2" >
-              Keterangan
-            </label>
-            <textarea
-              name="keterangan"
-              value={formData.keterangan}
-              onChange={handleChange}
-              rows="4"
-              onFocus={() => setFocusedField('keterangan')}
-              onBlur={() => setFocusedField(null)}
-              className={`w-full px-4 py-3 rounded-xl outline-none border-2 transition-all duration-300  ${focusedField === 'keterangan'
-                ? 'border-teal-400 shadow-lg ring-4 ring-teal-400/20'
-                : 'border-[#EDE6E3] hover:border-teal-400'}`}
-              
-              placeholder="Tambahkan keterangan (opsional)"
-            />
-          </div>
-        </div>
-
-        {/* Upload Section */}
-        <div className="bg-white p-6 rounded-2xl border-2 border-[#EDE6E3] shadow-md hover:shadow-lg transition-all duration-300">
-          <h2 className="text-base font-semibold mb-6 flex items-center" >
-            <div className="p-2.5 bg-white rounded-xl shadow-md mr-3">
-              <Upload className="w-5 h-5 text-teal-400" />
-            </div>
-            Upload Lampiran <span className="text-red-500 text-sm ml-1">*</span>
-          </h2>
-
-          <input
-            type="file"
-            id="lampiran"
-            accept="image/*,application/pdf"
-            multiple
-            onChange={handleFileChange}
-            className="hidden"
-          />
-
-          {files.length === 0 ? (
-            <label htmlFor="lampiran" className="block text-center p-12 border-2 border-dashed border-[#EDE6E3] rounded-xl cursor-pointer hover: hover:border-teal-400 transition-all duration-300">
-              <Upload className="w-10 h-10 mx-auto mb-4"  />
-              <p className="font-semibold" >Klik untuk upload file</p>
-              <p className="text-sm" >JPEG, PNG, GIF, WEBP, PDF (maks 5MB)</p>
-            </label>
-          ) : (
-            <div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-                {files.map((file, index) => (
-                  <div key={index} className="relative group">
-                    {file.type === 'application/pdf' ? (
-                      <div
-                        className="w-full h-24  rounded-lg flex flex-col items-center justify-center cursor-pointer border-2 border-[#EDE6E3] hover:border-teal-400 transition-all duration-300"
-                        onClick={() => openPreviewModal(null, index)}
-                      >
-                        {getFileIcon(file)}
-                        <span className="text-xs text-center px-1 truncate w-full" >
-                          {file.name.substring(0, 15)}{file.name.length > 15 ? '...' : ''}
-                        </span>
-                      </div>
-                    ) : (
-                      <img
-                        src={previewUrls[index]}
-                        alt=""
-                        className="w-full h-24 object-cover rounded-lg cursor-pointer border-2 border-[#EDE6E3] hover:border-teal-400 transition-all duration-300"
-                        onClick={() => openPreviewModal(previewUrls[index], index)}
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition flex items-center justify-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openPreviewModal(file.type === 'application/pdf' ? null : previewUrls[index], index);
-                        }}
-                        className="text-white hover:scale-110 transition-transform"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFile(index);
-                        }}
-                        className="text-white hover:scale-110 transition-transform"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                {/* Kolom Kanan */}
+                <div className="space-y-6 h-full">
+                    <div className="space-y-2 group h-full">
+                        <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold group-focus-within:text-white transition-colors">
+                            Keterangan Tambahan
+                        </label>
+                        <div className="relative h-[calc(100%-28px)]">
+                             <div className="absolute top-4 left-4 pointer-events-none">
+                                <AlignLeft className="h-4 w-4 text-zinc-500 group-focus-within:text-white transition-colors" />
+                            </div>
+                            <textarea
+                                name="keterangan"
+                                value={formData.keterangan}
+                                onChange={handleChange}
+                                rows={4}
+                                className="w-full h-full bg-zinc-900/50 border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 focus:bg-zinc-900 transition-all placeholder:text-zinc-600 resize-none leading-relaxed"
+                                placeholder="Tambahkan catatan atau instruksi khusus (opsional)..."
+                            />
+                        </div>
                     </div>
-                  </div>
-                ))}
-
-                {files.length < MAX_FILES && (
-                  <label
-                    htmlFor="lampiran"
-                    className="flex flex-col items-center justify-center border-2 border-dashed border-[#EDE6E3] rounded-lg h-24 cursor-pointer hover: hover:border-teal-400 transition-all duration-300"
-                  >
-                    <Plus className="w-5 h-5"  />
-                    <span className="text-xs" >Tambah</span>
-                  </label>
-                )}
-              </div>
-              <p className="text-sm" >
-                {files.length}/{MAX_FILES} file — Total {(files.reduce((a, b) => a + b.size, 0) / 1024 / 1024).toFixed(1)} MB
-              </p>
+                </div>
             </div>
-          )}
         </div>
 
-        {/* Submit Button */}
-        <div className="flex justify-center">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-12 py-4 bg-black text-white rounded-xl shadow-lg font-semibold transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center space-x-2 text-sm hover:shadow-xl transform hover:scale-105"
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                <span>Menyimpan...</span>
-              </>
+        {/* SECTION 2: FILE UPLOAD */}
+        <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-8">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-white/5 rounded-lg border border-white/5">
+                    <Paperclip className="w-5 h-5 text-zinc-300" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-semibold text-white">Lampiran Digital</h2>
+                    <p className="text-xs text-zinc-500">Scan dokumen surat keluar (PDF/Gambar)</p>
+                </div>
+            </div>
+
+            <input
+                type="file"
+                id="lampiran"
+                accept="image/*,application/pdf"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+            />
+
+            {files.length === 0 ? (
+                <label 
+                    htmlFor="lampiran" 
+                    className="group flex flex-col items-center justify-center p-16 border border-dashed border-white/10 rounded-2xl cursor-pointer hover:bg-white/[0.02] hover:border-white/20 transition-all duration-300"
+                >
+                    <div className="w-16 h-16 rounded-full bg-zinc-900 border border-white/5 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-zinc-800 transition-all duration-300">
+                        <Upload className="w-6 h-6 text-zinc-400 group-hover:text-white" />
+                    </div>
+                    <p className="text-sm font-medium text-white mb-1">Klik untuk upload dokumen</p>
+                    <p className="text-xs text-zinc-500">Mendukung PDF, JPG, PNG (Max 5MB)</p>
+                </label>
             ) : (
-              <>
-                <Send className="w-5 h-5" />
-                <span>Buat Surat Keluar</span>
-              </>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {files.map((file, index) => (
+                            <div key={index} className="group relative aspect-square bg-zinc-900 rounded-xl border border-white/10 overflow-hidden hover:border-white/30 transition-all">
+                                {file.type === 'application/pdf' ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center p-4" onClick={() => openPreviewModal(null, index)}>
+                                        <FileIcon className="w-10 h-10 text-white/20 mb-2 group-hover:text-white/50 transition-colors" />
+                                        <span className="text-[10px] text-zinc-500 text-center line-clamp-2 px-1 break-words leading-tight">
+                                            {file.name}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <img
+                                        src={previewUrls[index]}
+                                        alt=""
+                                        className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => openPreviewModal(previewUrls[index], index)}
+                                    />
+                                )}
+                                
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openPreviewModal(file.type === 'application/pdf' ? null : previewUrls[index], index)
+                                        }}
+                                        className="p-2 bg-white/10 rounded-full hover:bg-white text-white hover:text-black transition-all"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            removeFile(index)
+                                        }}
+                                        className="p-2 bg-rose-500/10 rounded-full hover:bg-rose-500 text-rose-500 hover:text-white transition-all"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {files.length < MAX_FILES && (
+                            <label
+                                htmlFor="lampiran"
+                                className="flex flex-col items-center justify-center aspect-square border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/[0.02] hover:border-white/30 transition-all"
+                            >
+                                <Plus className="w-6 h-6 text-zinc-500 mb-2" />
+                                <span className="text-[10px] uppercase tracking-widest text-zinc-500">Tambah</span>
+                            </label>
+                        )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between px-1">
+                        <p className="text-xs text-zinc-500 font-mono">
+                            {files.length}/{MAX_FILES} FILES
+                        </p>
+                        <p className="text-xs text-zinc-500 font-mono">
+                            {(files.reduce((a, b) => a + b.size, 0) / 1024 / 1024).toFixed(2)} MB TOTAL
+                        </p>
+                    </div>
+                </div>
             )}
-          </button>
         </div>
+
+        {/* SECTION 3: ACTION BUTTON */}
+        <div className="flex justify-end pt-4">
+            <button
+                type="submit"
+                disabled={loading}
+                className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-bold text-sm tracking-wide overflow-hidden transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02]"
+            >
+                {loading ? (
+                    <>
+                        <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                        <span>MENYIMPAN...</span>
+                    </>
+                ) : (
+                    <>
+                        <span>SIMPAN SURAT</span>
+                        <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                    </>
+                )}
+            </button>
+        </div>
+
       </form>
 
-      {/* Modal Preview */}
+      {/* PREVIEW MODAL */}
       {previewModal.isOpen && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="relative max-w-4xl w-full">
-            <button
-              onClick={closePreviewModal}
-              className="absolute -top-12 right-0 text-white hover:scale-110 transition-transform"
-            >
-              <X className="w-8 h-8" />
-            </button>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
+            <div className="relative w-full max-w-5xl h-full flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                     <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white/10 rounded-lg">
+                            {previewModal.isPdf ? <FileText className="w-5 h-5 text-white" /> : <Eye className="w-5 h-5 text-white" />}
+                        </div>
+                        <span className="text-white text-sm font-medium truncate max-w-md">
+                            {files[previewModal.index]?.name}
+                        </span>
+                     </div>
+                     <button
+                        onClick={closePreviewModal}
+                        className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+                     >
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
 
-            {previewModal.isPdf ? (
-              <div className="bg-white rounded-xl shadow-2xl h-[80vh] flex flex-col border-2 border-[#EDE6E3]">
-                <div className="p-4 border-b border-[#EDE6E3] flex items-center">
-                  <FileIcon className="w-5 h-5 text-red-500 mr-2" />
-                  <span className="font-medium truncate" >
-                    {files[previewModal.index]?.name}
-                  </span>
+                <div className="flex-1 bg-zinc-900 rounded-2xl border border-white/10 overflow-hidden relative shadow-2xl">
+                    {previewModal.isPdf ? (
+                        <iframe
+                            src={previewModal.imageUrl}
+                            className="w-full h-full"
+                            title="PDF Preview"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center p-4">
+                            <img
+                                src={previewModal.imageUrl}
+                                alt="Preview"
+                                className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                            />
+                        </div>
+                    )}
                 </div>
-                <div className="flex-grow overflow-hidden">
-                  <iframe
-                    src={previewModal.imageUrl}
-                    className="w-full h-full rounded-b-xl"
-                    title="PDF Preview"
-                  />
-                </div>
-              </div>
-            ) : (
-              <img
-                src={previewModal.imageUrl}
-                alt="Preview"
-                className="max-h-[80vh] rounded-xl shadow-2xl mx-auto border-2 border-[#EDE6E3]"
-              />
-            )}
-          </div>
+            </div>
         </div>
       )}
     </div>

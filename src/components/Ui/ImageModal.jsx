@@ -1,77 +1,73 @@
 import React from 'react'
+import { X, ZoomIn, Download, ExternalLink } from 'lucide-react'
 
 const ImageModal = ({
   selectedImage,
   setSelectedImage
 }) => {
+  if (!selectedImage) return null;
+
   return (
-    <div>
-      {selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-300">
-          {/* Container Modal */}
-          <div className="relative w-full max-w-7xl mx-auto max-h-full animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-in fade-in duration-300">
+      
+      {/* Clickable Backdrop */}
+      <div 
+        className="absolute inset-0 z-0 cursor-zoom-out"
+        onClick={() => setSelectedImage(null)}
+      />
 
-            {/* Tombol Close */}
+      {/* Main Container */}
+      <div className="relative z-10 w-full max-w-6xl h-full flex flex-col items-center justify-center p-4 sm:p-8 animate-in zoom-in-95 duration-300">
+        
+        {/* Top Bar (Close) */}
+        <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-50 flex gap-3">
             <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute -top-12 right-0 sm:top-4 sm:right-4 z-20 
-                   bg-white/20 hover:bg-white/30 active:bg-white/40
-                   backdrop-blur-md rounded-full p-2 sm:p-3
-                   text-white hover:text-gray-200 
-                   transition-all duration-200 ease-out
-                   hover:scale-110 active:scale-95
-                   border border-white/20 hover:border-white/30
-                   shadow-lg hover:shadow-xl"
-              aria-label="Tutup modal"
+                onClick={() => setSelectedImage(null)}
+                className="group p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 backdrop-blur-md transition-all duration-300"
+                title="Tutup"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+                <X className="w-5 h-5 text-zinc-400 group-hover:text-white transition-colors" />
             </button>
-
-            {/* Container Gambar */}
-            <div className="relative bg-white/5 backdrop-blur-xl rounded-2xl sm:rounded-3xl 
-                      border border-white/20 shadow-2xl overflow-hidden
-                      hover:shadow-3xl transition-shadow duration-300">
-
-              {/* Gradient Overlay untuk Estetika */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/20 pointer-events-none rounded-2xl sm:rounded-3xl"></div>
-
-              {/* Gambar */}
-              <img
-                src={selectedImage}
-                alt="Preview gambar"
-                className="w-full max-h-[85vh] sm:max-h-[90vh] object-contain 
-                     rounded-2xl sm:rounded-3xl
-                     transition-transform duration-300 ease-out"
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/800x600?text=Gambar+Tidak+Dapat+Ditampilkan';
-                }}
-                loading="lazy"
-              />
-
-              {/* Loading Shimmer Effect (Optional) */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent 
-                        -translate-x-full animate-pulse duration-1000 pointer-events-none"></div>
-            </div>
-
-            {/* Info atau Actions (Optional) */}
-            <div className="absolute bottom-4 left-4 right-4 
-                      bg-black/30 backdrop-blur-md rounded-xl p-3
-                      border border-white/10 opacity-0 hover:opacity-100
-                      transition-opacity duration-300 pointer-events-none">
-              <p className="text-white/80 text-sm text-center">
-                Klik di luar gambar atau tombol × untuk menutup
-              </p>
-            </div>
-          </div>
-
-          <div
-            className="absolute inset-0 -z-10"
-            onClick={() => setSelectedImage(null)}
-          />
         </div>
-      )}
+
+        {/* Image Display Area */}
+        <div className="relative flex-1 w-full flex items-center justify-center overflow-hidden">
+             {/* Image */}
+             <img
+                src={selectedImage}
+                alt="Preview Detail"
+                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl shadow-black/50 select-none"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/800x600?text=Image+Load+Error';
+                }}
+            />
+        </div>
+
+        {/* Bottom Action Bar */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50">
+            <div className="flex items-center gap-1 p-1.5 bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/50">
+                <button 
+                    onClick={() => window.open(selectedImage, '_blank')}
+                    className="p-3 hover:bg-white/10 rounded-xl text-zinc-400 hover:text-white transition-all tooltip-trigger"
+                    title="Buka Tab Baru"
+                >
+                    <ExternalLink className="w-5 h-5" />
+                </button>
+                
+                <div className="w-px h-6 bg-white/10 mx-1"></div>
+
+                <a 
+                    href={selectedImage} 
+                    download 
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-white text-zinc-300 hover:text-black rounded-xl text-xs font-bold uppercase tracking-wide transition-all"
+                >
+                    <Download className="w-4 h-4" />
+                    <span>Download</span>
+                </a>
+            </div>
+        </div>
+
+      </div>
     </div>
   )
 }

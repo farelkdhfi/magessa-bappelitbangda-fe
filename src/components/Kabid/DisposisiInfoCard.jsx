@@ -1,14 +1,54 @@
 import React from 'react'
 import { formatIndonesianDate } from '../../utils/timeZone'
-import { AlertCircle, Building, Calendar, Clock, FileText, MessageSquare, User } from 'lucide-react'
+import { 
+  AlertCircle, 
+  Building, 
+  Calendar, 
+  Clock, 
+  FileText, 
+  MessageSquare, 
+  User,
+  Hash,
+  ArrowRight
+} from 'lucide-react'
 import StatusBadge from './StatusBadge'
+
+// Komponen Reusable untuk Item Data (Micro-Component style)
+const DataField = ({ label, value, icon: Icon, isBadge = false }) => (
+  <div className="group bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-4 hover:border-white/10 transition-all duration-300">
+    <div className="flex items-center gap-2 mb-2">
+      <Icon className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+        {label}
+      </p>
+    </div>
+    <div className="pl-[22px]">
+      {isBadge ? (
+        value
+      ) : (
+        <p className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">
+          {value}
+        </p>
+      )}
+    </div>
+  </div>
+);
+
+// Komponen Header Section
+const SectionHeader = ({ title, icon: Icon, colorClass = "text-zinc-400" }) => (
+  <div className="flex items-center gap-3 mb-6">
+    <div className="p-2.5 bg-zinc-800/50 rounded-xl border border-white/5 shadow-inner">
+      <Icon className={`w-5 h-5 ${colorClass}`} />
+    </div>
+    <h3 className="text-lg font-light text-white tracking-tight">
+      {title}
+    </h3>
+  </div>
+);
 
 const DisposisiInfoCard = ({ disposisi }) => {
 
-  // === FUNGSI HELPER BARU ===
-  // Fungsi ini menangani dua kondisi:
-  // 1. Jika data dari database sudah "1 Januari 2025", tampilkan apa adanya.
-  // 2. Jika data dari database masih "2025-01-01", format dulu ke Indo.
+  // === FUNGSI HELPER BARU (LOGIC TIDAK DIUBAH) ===
   const formatDisplayDate = (dateString) => {
     if (!dateString) return '-'
     
@@ -30,106 +70,86 @@ const DisposisiInfoCard = ({ disposisi }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-      {/* Informasi Surat */}
-      <div>
-        <div className="flex items-center mb-4">
-          <div className="p-3 bg-white rounded-xl shadow-lg mr-1">
-            <FileText className="w-6 h-6 text-teal-400" />
-          </div>
-          <h3 className=" font-semibold" >Informasi Surat</h3>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      {/* Kolom 1: Informasi Surat */}
+      <div className="flex flex-col gap-3">
+        <SectionHeader 
+          title="Informasi Surat" 
+          icon={FileText} 
+          colorClass="text-emerald-400" 
+        />
+        
+        <DataField 
+          icon={Hash} 
+          label="Nomor Surat" 
+          value={disposisi.nomor_surat || '-'} 
+        />
+        
+        <DataField 
+          icon={Building} 
+          label="Asal Instansi" 
+          value={disposisi.asal_instansi || '-'} 
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <DataField 
+            icon={Calendar} 
+            label="Tanggal Surat" 
+            value={formatDisplayDate(disposisi.tanggal_surat)} 
+          />
+          <DataField 
+            icon={Calendar} 
+            label="Diterima Tanggal" 
+            value={formatDisplayDate(disposisi.diterima_tanggal)} 
+          />
         </div>
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <Building className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Nomor Surat</p>
-            </div>
-            <p className="font-semibold" >{disposisi.nomor_surat || '-'}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <Building className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Asal Instansi</p>
-            </div>
-            <p className="font-semibold" >{disposisi.asal_instansi || '-'}</p>
-          </div>
 
-          {/* === UPDATE: MENGGUNAKAN formatDisplayDate === */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <Calendar className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Tanggal Surat</p>
-            </div>
-            <p className="font-semibold" >
-              {formatDisplayDate(disposisi.tanggal_surat)}
-            </p>
-          </div>
-
-          {/* === UPDATE: MENGGUNAKAN formatDisplayDate === */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <Calendar className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Diterima Tanggal</p>
-            </div>
-            <p className="font-semibold" >
-              {formatDisplayDate(disposisi.diterima_tanggal)}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <FileText className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Nomor Agenda</p>
-            </div>
-            <p className="font-semibold" >{disposisi.nomor_agenda || '-'}</p>
-          </div>
-        </div>
+        <DataField 
+          icon={FileText} 
+          label="Nomor Agenda" 
+          value={disposisi.nomor_agenda || '-'} 
+        />
       </div>
-      {/* Informasi Disposisi */}
-      <div>
-        <div className="flex items-center mb-4">
-          <div className="p-3 bg-white rounded-xl shadow-lg mr-1">
-            <MessageSquare className="w-6 h-6 text-teal-400" />
-          </div>
-          <h3 className=" font-semibold" >Informasi Disposisi</h3>
-        </div>
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <p className="text-sm font-semibold mb-2" >Status</p>
-            <div className="inline-block">
-              <StatusBadge status={disposisi.status_dari_kabid} />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Sifat</p>
-            </div>
-            <p className="font-semibold" >{disposisi.sifat || '-'}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <User className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Disposisi Kepada Jabatan</p>
-            </div>
-            <p className="font-semibold" >{disposisi.disposisi_kepada_jabatan}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <User className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Diteruskan Kepada</p>
-            </div>
-            <p className="font-semibold" >{disposisi.diteruskan_kepada_nama || disposisi.diteruskan_kepada_jabatan}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-2">
-              <Clock className="w-4 h-4 mr-2" />
-              <p className="text-sm font-semibold" >Tanggal Disposisi</p>
-            </div>
-            <p className="font-semibold" >{formatIndonesianDate(disposisi.created_at)}</p>
-          </div>
-        </div>
+
+      {/* Kolom 2: Informasi Disposisi */}
+      <div className="flex flex-col gap-3">
+        <SectionHeader 
+          title="Informasi Disposisi" 
+          icon={MessageSquare} 
+          colorClass="text-indigo-400" 
+        />
+
+        <DataField 
+          icon={AlertCircle} 
+          label="Status" 
+          isBadge={true}
+          value={<StatusBadge status={disposisi.status_dari_kabid} />} 
+        />
+
+        <DataField 
+          icon={AlertCircle} 
+          label="Sifat" 
+          value={disposisi.sifat || '-'} 
+        />
+
+        <DataField 
+          icon={User} 
+          label="Disposisi Kepada" 
+          value={disposisi.disposisi_kepada_jabatan} 
+        />
+
+        <DataField 
+          icon={ArrowRight} 
+          label="Diteruskan Kepada" 
+          value={disposisi.diteruskan_kepada_nama || disposisi.diteruskan_kepada_jabatan} 
+        />
+
+        <DataField 
+          icon={Clock} 
+          label="Tanggal Disposisi" 
+          value={formatIndonesianDate(disposisi.created_at)} 
+        />
       </div>
     </div>
   )

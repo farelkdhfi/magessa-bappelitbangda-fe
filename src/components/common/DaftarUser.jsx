@@ -1,9 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Filter, RefreshCw, Award, Building, Loader } from 'lucide-react';
+import { 
+  Users, 
+  Search, 
+  Filter, 
+  RefreshCw, 
+  Award, 
+  Building, 
+  LayoutGrid,
+  Briefcase,
+  ShieldCheck,
+  UserCircle
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../utils/api';
 import LoadingSpinner from '../Ui/LoadingSpinner';
+
+// === SUB-COMPONENTS ===
+
+const StatCard = ({ title, count, icon: Icon, subtitle }) => (
+  <div className="group relative bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 hover:border-white/10 transition-all duration-500 overflow-hidden">
+    <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors duration-500 pointer-events-none" />
+    <div className="relative z-10 flex flex-col justify-between h-full">
+      <div className="flex justify-between items-start mb-4">
+        <div className="p-3 bg-zinc-800/50 rounded-2xl border border-white/5 text-zinc-400 group-hover:text-white group-hover:bg-zinc-800 transition-colors">
+          <Icon className="w-5 h-5" />
+        </div>
+      </div>
+      <div>
+        <h3 className="text-3xl font-semibold text-white tracking-tight mb-1">{count}</h3>
+        <p className="text-sm text-zinc-500 font-medium">{title}</p>
+        {subtitle && <p className="text-xs text-zinc-600 mt-2">{subtitle}</p>}
+      </div>
+    </div>
+  </div>
+);
+
+// === MAIN COMPONENT ===
 
 const DaftarUser = () => {
   const { user } = useAuth();
@@ -18,7 +51,7 @@ const DaftarUser = () => {
     try {
       if (showLoadingToast) {
         setRefreshing(true);
-        toast.loading('Memuat data user...');
+        toast.loading('Sinkronisasi data...');
       }
 
       const response = await api.get('/users/daftar-user');
@@ -27,12 +60,12 @@ const DaftarUser = () => {
 
       if (showLoadingToast) {
         toast.dismiss();
-        toast.success(`Berhasil memuat ${data.total || data.data?.length || 0} user`);
+        toast.success('Data berhasil diperbarui');
       }
 
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error(error.message || 'Gagal memuat data user');
+      toast.error(error.message || 'Gagal memuat data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -43,7 +76,6 @@ const DaftarUser = () => {
     fetchUsers();
   }, []);
 
-  // Filter users based on search term and bidang
   const filteredUsers = users.filter(userData => {
     const matchesSearch = (userData.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (userData.email || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -51,178 +83,203 @@ const DaftarUser = () => {
     return matchesSearch && matchesBidang;
   });
 
-  // Get unique bidang for filter dropdown
   const uniqueBidang = [...new Set(users.map(userData => userData.bidang).filter(Boolean))];
 
-  // Handle refresh
   const handleRefresh = () => {
     fetchUsers(true);
   };
 
-  // Get user initials for avatar
   const getUserInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
   };
 
-  // ✅ AVATAR DINAMIS — ABU-ABU TERANG (karena hanya 3 warna)
+  // Avatar Logic: Darker, desaturated background for dark mode elegance
   const getAvatarColor = (name) => {
-    if (!name) return 'bg-gray-100 text-gray-600';
+    if (!name) return { bg: 'hsl(0, 0%, 20%)', text: '#fff' };
     const hue = (name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 137.509) % 360;
-    return `hsl(${hue}, 15%, 90%)`; // Abu-abu sangat terang, netral, tidak mencolok
+    return {
+        bg: `hsl(${hue}, 20%, 20%)`, // Dark pastel
+        text: `hsl(${hue}, 80%, 90%)` // Light text
+    };
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-x-3">
-          <div className="h-8 w-1.5 bg-black rounded-full shadow-sm"></div>
-          <div>
-            <h1 className="text-lg font-bold text-black">Daftar User</h1>
-            <p className="text-sm text-gray-600">Daftar pengguna sistem</p>
+    <div className="min-h-screen text-white font-sans selection:bg-white/20 pb-20">
+      
+      {/* 1. Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/5 rounded-lg border border-white/5 backdrop-blur-sm">
+              <Users className="w-5 h-5 text-zinc-400" />
+            </div>
+            <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">
+              Directory
+            </p>
           </div>
+          <h1 className="text-3xl font-light tracking-tight text-white">
+            Daftar <span className="font-semibold text-zinc-400">Pengguna</span>
+          </h1>
         </div>
+        
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="bg-white hover:bg-gray-50 border border-gray-200 gap-x-2 flex items-center text-black px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:border-teal-400"
+          className="group flex items-center gap-2 px-5 py-3 bg-zinc-900 border border-zinc-800 rounded-full hover:border-white/20 hover:bg-zinc-800 transition-all duration-300"
         >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 text-zinc-400 group-hover:text-white transition-colors ${refreshing ? 'animate-spin' : ''}`} />
+          <span className="text-xs font-bold text-zinc-400 group-hover:text-white uppercase tracking-wider">Refresh</span>
         </button>
       </div>
 
-      {/* Stat Cards — White + Black + teal Accent */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 opacity-80">Total User</p>
-              <p className="text-lg font-bold text-black mt-2">{users.length}</p>
-            </div>
-            <div className="p-3 bg-teal-50 rounded-xl shadow-sm border border-teal-100">
-              <Users className="w-6 h-6 text-teal-400" />
-            </div>
-          </div>
-        </div>
+      {/* 2. Stat Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard 
+            title="Total User" 
+            count={users.length} 
+            icon={Users} 
+            subtitle="Akun terdaftar dalam sistem"
+        />
+        <StatCard 
+            title="Divisi / Bidang" 
+            count={uniqueBidang.length} 
+            icon={Building} 
+            subtitle="Unit kerja aktif"
+        />
+        <StatCard 
+            title="Hasil Filter" 
+            count={filteredUsers.length} 
+            icon={Filter} 
+            subtitle="Data ditampilkan saat ini"
+        />
+      </div>
 
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 opacity-80">Bidang Unik</p>
-              <p className="text-lg font-bold text-black mt-2">{uniqueBidang.length}</p>
+      {/* 3. Search & Filter Bar */}
+      <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 mb-8">
+        <div className="flex flex-col md:flex-row gap-4">
+            
+            {/* Search Input */}
+            <div className="flex-1 relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-white transition-colors" />
+                <input
+                    type="text"
+                    placeholder="Cari nama atau email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-black/20 border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/10 focus:bg-black/40 transition-all"
+                />
             </div>
-            <div className="p-3 bg-teal-50 rounded-xl shadow-sm border border-teal-100">
-              <Building className="w-6 h-6 text-teal-400" />
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 opacity-80">Hasil Filter</p>
-              <p className="text-lg font-bold text-black mt-2">{filteredUsers.length}</p>
+            {/* Filter Dropdown */}
+            <div className="w-full md:w-1/3 relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
+                    <Filter className="h-4 w-4" />
+                </div>
+                <select
+                    value={filterBidang}
+                    onChange={(e) => setFilterBidang(e.target.value)}
+                    className="w-full bg-black/20 border border-white/5 rounded-xl py-3 pl-10 pr-10 text-sm text-zinc-300 appearance-none focus:outline-none focus:border-white/10 focus:bg-black/40 transition-all cursor-pointer"
+                >
+                    <option value="">Semua Bidang</option>
+                    {uniqueBidang.map(bidang => (
+                        <option key={bidang} value={bidang} className="text-black">{bidang}</option>
+                    ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="w-2 h-2 border-r border-b border-zinc-500 rotate-45 transform -translate-y-1"></div>
+                </div>
             </div>
-            <div className="p-3 bg-teal-50 rounded-xl shadow-sm border border-teal-100">
-              <Filter className="w-6 h-6 text-teal-400" />
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Search and Filter — GLASSMORPHISM WITH ONLY 3 COLORS */}
-      <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-gray-100 shadow-md mb-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Cari nama atau email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white text-black border border-gray-200 rounded-xl focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 focus:border-transparent transition-all duration-200 text-sm shadow-sm"
-            />
-          </div>
-
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <select
-              value={filterBidang}
-              onChange={(e) => setFilterBidang(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white text-black border border-gray-200 rounded-xl focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 focus:border-transparent transition-all duration-200 text-sm appearance-none cursor-pointer shadow-sm"
-            >
-              <option value="" className="text-gray-600">Semua Bidang</option>
-              {uniqueBidang.map(bidang => (
-                <option key={bidang} value={bidang} className="text-black">{bidang}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center text-sm font-medium text-gray-600">
-            Menampilkan {filteredUsers.length} dari {users.length} user
-          </div>
-        </div>
-      </div>
-
-      {/* User List */}
+      {/* 4. User Grid List */}
       {filteredUsers.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <Users className="w-16 h-16 text-gray-400 mx-auto mb-2" />
-          <p className="text-black text-lg font-semibold">
-            {searchTerm || filterBidang ? 'Tidak ada hasil pencarian' : 'Tidak ada user'}
-          </p>
-          <p className="text-gray-600 text-sm mt-1">
-            {searchTerm || filterBidang ? 'Coba sesuaikan kata kunci atau filter' : 'Belum ada user yang terdaftar'}
-          </p>
+        <div className="bg-zinc-900/30 border border-white/5 rounded-3xl p-20 text-center">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/5">
+                <Search className="w-8 h-8 text-zinc-600" />
+            </div>
+            <h3 className="text-xl font-light text-white mb-2">Tidak ada pengguna ditemukan</h3>
+            <p className="text-zinc-500 text-sm">Coba sesuaikan kata kunci pencarian atau filter Anda.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filteredUsers.map((userData) => (
-            <div 
-              key={userData.id} 
-              className="bg-white p-2 md:p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-              style={user && userData.id === user.id ? { borderLeft: '4px solid #ec4899', boxShadow: '0 10px 25px rgba(0,0,0,0.03)' } : {}}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  {/* ✅ MODERN AVATAR — ABU-ABU TERANG DENGAN HSL */}
-                  <div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm text-black shadow-sm"
-                    style={{ backgroundColor: getAvatarColor(userData.name) }}
-                  >
-                    {getUserInitials(userData.name)}
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredUsers.map((userData) => {
+            const avatarStyle = getAvatarColor(userData.name);
+            const isCurrentUser = user && userData.id === user.id;
 
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-sm text-black">{userData.name}</h3>
-                      {user && userData.id === user.id && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 border border-teal-200">
-                          <Award className="w-3 h-3 mr-1" /> Anda
-                        </span>
-                      )}
+            return (
+              <div 
+                key={userData.id} 
+                className={`group relative bg-zinc-900/50 backdrop-blur-sm border rounded-3xl p-6 transition-all duration-500 flex flex-col h-full hover:-translate-y-1
+                    ${isCurrentUser 
+                        ? 'border-indigo-500/30 shadow-[0_0_30px_-10px_rgba(99,102,241,0.2)]' 
+                        : 'border-white/5 hover:border-white/10'
+                    }`}
+              >
+                {/* Glow Effect */}
+                <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors duration-500 pointer-events-none" />
+
+                <div className="relative z-10 flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        {/* Avatar */}
+                        <div 
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-inner border border-white/5"
+                            style={{ 
+                                backgroundColor: avatarStyle.bg, 
+                                color: avatarStyle.text 
+                            }}
+                        >
+                            {getUserInitials(userData.name)}
+                        </div>
+                        
+                        <div>
+                            <h3 className="font-semibold text-white text-base leading-tight group-hover:text-indigo-200 transition-colors">
+                                {userData.name}
+                            </h3>
+                            <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+                                {userData.jabatan || 'No Title'}
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-sm font-medium text-gray-600 mt-1">
-                      Jabatan: {userData.jabatan || 'Tidak diketahui'}
-                    </p>
-                  </div>
+
+                    {/* Current User Badge */}
+                    {isCurrentUser && (
+                        <div className="p-1.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20" title="Akun Anda">
+                            <UserCircle className="w-5 h-5 text-indigo-400" />
+                        </div>
+                    )}
                 </div>
                 
-                <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3.5 py-2.5 rounded-xl border border-gray-100 shadow-sm">
-                  <Building className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-black">{userData.bidang}</span>
+                {/* Content */}
+                <div className="relative z-10 mt-auto space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5">
+                        <Briefcase className="w-4 h-4 text-zinc-600" />
+                        <span className="text-xs text-zinc-400 font-medium">
+                            {userData.jabatan || '-'}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5">
+                        <Building className="w-4 h-4 text-zinc-600" />
+                        <span className="text-xs text-zinc-400 font-medium">
+                            {userData.bidang || 'Tidak ada divisi'}
+                        </span>
+                    </div>
                 </div>
+
+                {/* Footer / Decorative Line */}
+                <div className={`mt-4 h-0.5 w-full rounded-full ${isCurrentUser ? 'bg-indigo-500/30' : 'bg-white/5'}`} />
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

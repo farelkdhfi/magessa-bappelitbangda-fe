@@ -1,79 +1,74 @@
-import React from 'react'
+import React from 'react';
+import { X, ExternalLink, ZoomIn } from 'lucide-react';
 
 const ImageModal = ({
   selectedImage,
   setSelectedImage
 }) => {
+  
+  if (!selectedImage) return null;
+
   return (
-    <div>
-      {selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-300">
-          {/* Container Modal */}
-          <div className="relative w-full max-w-7xl mx-auto max-h-full animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8">
+      
+      {/* 1. Backdrop (Darker & Blurrier for Focus) */}
+      <div 
+        className="absolute inset-0 bg-black/95 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
+        onClick={() => setSelectedImage(null)}
+      />
 
-            {/* Tombol Close */}
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute -top-12 right-0 sm:top-4 sm:right-4 z-20 
-                   bg-white/20 hover:bg-white/30 active:bg-white/40
-                   backdrop-blur-md rounded-full p-2 sm:p-3
-                   text-white hover:text-gray-200 
-                   transition-all duration-200 ease-out
-                   hover:scale-110 active:scale-95
-                   border border-white/20 hover:border-white/30
-                   shadow-lg hover:shadow-xl"
-              aria-label="Tutup modal"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+      {/* 2. Content Wrapper */}
+      <div className="relative w-full h-full flex flex-col items-center justify-center pointer-events-none animate-in zoom-in-95 duration-300">
+        
+        {/* Floating Toolbar (Top Right) */}
+        <div className="absolute top-0 right-0 z-50 flex items-center gap-3 pointer-events-auto">
+          {/* Open Original Button */}
+          <a
+            href={selectedImage}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-white/20 backdrop-blur-md transition-all duration-300"
+            title="Buka ukuran asli"
+          >
+            <ExternalLink className="w-5 h-5" />
+          </a>
 
-            {/* Container Gambar */}
-            <div className="relative bg-white/5 backdrop-blur-xl rounded-2xl sm:rounded-3xl 
-                      border border-white/20 shadow-2xl overflow-hidden
-                      hover:shadow-3xl transition-shadow duration-300">
-
-              {/* Gradient Overlay untuk Estetika */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/20 pointer-events-none rounded-2xl sm:rounded-3xl"></div>
-
-              {/* Gambar */}
-              <img
-                src={selectedImage}
-                alt="Preview gambar"
-                className="w-full max-h-[85vh] sm:max-h-[90vh] object-contain 
-                     rounded-2xl sm:rounded-3xl
-                     transition-transform duration-300 ease-out"
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/800x600?text=Gambar+Tidak+Dapat+Ditampilkan';
-                }}
-                loading="lazy"
-              />
-
-              {/* Loading Shimmer Effect (Optional) */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent 
-                        -translate-x-full animate-pulse duration-1000 pointer-events-none"></div>
-            </div>
-
-            {/* Info atau Actions (Optional) */}
-            <div className="absolute bottom-4 left-4 right-4 
-                      bg-black/30 backdrop-blur-md rounded-xl p-3
-                      border border-white/10 opacity-0 hover:opacity-100
-                      transition-opacity duration-300 pointer-events-none">
-              <p className="text-white/80 text-sm text-center">
-                Klik di luar gambar atau tombol × untuk menutup
-              </p>
-            </div>
-          </div>
-
-          <div
-            className="absolute inset-0 -z-10"
+          {/* Close Button */}
+          <button
             onClick={() => setSelectedImage(null)}
+            className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 text-zinc-400 hover:text-white hover:bg-red-500/20 hover:border-red-500/30 hover:text-red-400 backdrop-blur-md transition-all duration-300"
+            title="Tutup (Esc)"
+          >
+            <X className="w-5 h-5 transition-transform group-hover:rotate-90" />
+          </button>
+        </div>
+
+        {/* 3. Image Container */}
+        <div 
+            className="relative pointer-events-auto overflow-hidden rounded-2xl shadow-2xl shadow-black border border-white/10 bg-zinc-900"
+            onClick={(e) => e.stopPropagation()} 
+        >
+          <img
+            src={selectedImage}
+            alt="Preview Fullscreen"
+            className="max-w-full max-h-[85vh] object-contain select-none"
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/800x600?text=Gambar+Rusak';
+            }}
           />
         </div>
-      )}
-    </div>
-  )
-}
 
-export default ImageModal
+        {/* 4. Bottom Hint */}
+        <div className="mt-6 pointer-events-none opacity-0 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-forwards">
+             <div className="flex items-center gap-2 px-4 py-2 bg-black/50 border border-white/5 rounded-full backdrop-blur-md text-xs text-zinc-500 font-medium">
+                <ZoomIn className="w-3 h-3" />
+                <span>Tekan tombol ESC atau klik area gelap untuk menutup</span>
+             </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default ImageModal;

@@ -1,12 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Shield, ArrowLeft, LogIn } from 'lucide-react';
+import { Shield, ArrowLeft, LogIn, Lock } from 'lucide-react';
 
 const UnauthorizedPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // --- LOGIC (Tidak Dirubah) ---
   const handleGoBack = () => {
     // Redirect berdasarkan role user
     if (user?.role === 'admin') {
@@ -23,66 +24,77 @@ const UnauthorizedPage = () => {
       navigate('/');
     }
   };
+  // ---------------------------
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-white/20 backdrop-blur-3xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-indigo-600/5"></div>
-      </div>
+    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-red-500/30">
       
+      {/* Ambient Background Glow (Red Warning Tone) */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-500/10 rounded-full blur-[100px] pointer-events-none" />
+      
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
+
       {/* Main Card */}
-      <div className="relative w-full max-w-md">
-        <div className="bg-white shadow-lg rounded-3xl p-5 text-center">
-          {/* Floating elements for visual appeal */}
-          <div className="absolute -top-6 left-8 w-12 h-12 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full opacity-20 blur-xl"></div>
-          <div className="absolute -bottom-4 right-6 w-8 h-8 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full opacity-20 blur-lg"></div>
+      <div className="relative w-full max-w-md z-10">
+        <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center shadow-2xl shadow-black/50 animate-in zoom-in-95 duration-500">
           
           {/* Icon Section */}
           <div className="relative mb-8">
-            <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-r from-black to-teal-500 shadow-lg shadow-red-500/25 mb-6 transform hover:scale-105 transition-transform duration-300">
-              <Shield className="h-10 w-10 text-white" />
+            <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-red-500/5 border border-red-500/20 shadow-[0_0_40px_-10px_rgba(239,68,68,0.3)] group">
+              <Shield className="h-10 w-10 text-red-500 transition-transform duration-500 group-hover:scale-110" strokeWidth={1.5} />
+              
+              {/* Floating Lock Icon Decoration */}
+              <div className="absolute -bottom-1 -right-1 bg-zinc-900 border border-white/10 p-2 rounded-full shadow-lg">
+                <Lock className="h-4 w-4 text-zinc-400" />
+              </div>
             </div>
-            
-            {/* Decorative rings */}
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-24 border-2 border-red-200 rounded-full animate-pulse"></div>
-            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-28 h-28 border border-red-100 rounded-full opacity-50"></div>
           </div>
 
           {/* Content */}
-          <div className="space-y-6">
+          <div className="space-y-6 mb-10">
             <div>
-              <h1 className="text-2xl uppercase font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
-                Akses Ditolak
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                Security Restriction
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              </p>
+              <h1 className="text-3xl font-light text-white tracking-tight mb-4">
+                Akses <span className="font-semibold text-red-500">Ditolak</span>
               </h1>
-              <p className="text-gray-600 leading-relaxed">
-                Anda tidak memiliki izin untuk mengakses halaman ini. Silakan hubungi administrator jika Anda merasa ini adalah kesalahan.
+              <p className="text-zinc-400 text-sm leading-relaxed px-4">
+                Anda tidak memiliki izin (Permission Level) yang cukup untuk mengakses halaman ini. Silakan hubungi administrator sistem.
               </p>
             </div>
           </div>
           
           {/* Action Buttons */}
-          <div className="space-y-4 mt-8 text-sm">
+          <div className="space-y-3">
             <button
               onClick={handleGoBack}
-              className="group w-full bg-gradient-to-r from-black to-gray-800 hover:from-black hover:to-black text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-teal-500/25 flex items-center justify-center space-x-2"
+              className="group w-full bg-white text-black hover:bg-zinc-200 font-bold py-4 px-6 rounded-2xl transition-all duration-300 shadow-xl shadow-white/5 flex items-center justify-center gap-3"
             >
-              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
-              <span>Kembali ke Dashboard</span>
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span className="uppercase tracking-widest text-xs">Kembali ke Dashboard</span>
             </button>
             
             <button
-              onClick={() => navigate('/login')}
-              className="group w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-2xl border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center space-x-2"
+              onClick={() => navigate('/')}
+              className="group w-full bg-transparent hover:bg-white/5 text-zinc-500 hover:text-white font-semibold py-4 px-6 rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 flex items-center justify-center gap-3"
             >
-              <LogIn className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-              <span>Login Ulang</span>
+              <LogIn className="h-4 w-4 group-hover:text-zinc-300 transition-colors" />
+              <span className="text-xs uppercase tracking-widest">Login Ulang</span>
             </button>
           </div>
+
         </div>
-        
-        {/* Bottom glow effect */}
-        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-3/4 h-8 bg-gradient-to-r from-transparent via-blue-500/10 to-transparent blur-xl"></div>
+
+        {/* Footer Meta */}
+        <div className="mt-6 text-center">
+            <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-widest">
+                Error Code: 403 Forbidden
+            </p>
+        </div>
       </div>
     </div>
   );

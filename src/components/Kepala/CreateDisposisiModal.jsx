@@ -1,6 +1,19 @@
 import { useState } from "react";
+// 1. Tambahkan import createPortal dari react-dom
+import { createPortal } from "react-dom";
 import { api } from "../../utils/api";
-import { File, X } from "lucide-react";
+import { 
+  FileText, 
+  X, 
+  CheckCircle2, 
+  AlertCircle, 
+  User, 
+  CornerDownRight, 
+  FileEdit,
+  AlignLeft,
+  Calendar,
+  Building
+} from "lucide-react";
 import toast from 'react-hot-toast';
 
 const CreateDisposisiModal = ({ surat, onClose, onSuccess }) => {
@@ -43,7 +56,9 @@ const CreateDisposisiModal = ({ surat, onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!formData.sifat || !formData.perihal || !formData.disposisi_kepada_jabatan || !formData.dengan_hormat_harap) {
-      toast.error('Semua field harus diisi!');
+      toast.error('Semua field wajib diisi', {
+        style: { background: '#333', color: '#fff' }
+      });
       return;
     }
 
@@ -51,7 +66,9 @@ const CreateDisposisiModal = ({ surat, onClose, onSuccess }) => {
 
     try {
       await api.post(`/disposisi/${surat.id}`, formData);
-      toast.success('Disposisi berhasil dibuat!');
+      toast.success('Disposisi berhasil dibuat', {
+        style: { background: '#333', color: '#fff' }
+      });
       onSuccess();
     } catch (error) {
       console.error('Error creating disposisi:', error);
@@ -61,163 +78,205 @@ const CreateDisposisiModal = ({ surat, onClose, onSuccess }) => {
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border-2 border-slate-200 shadow-lg">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-white rounded-xl shadow-md">
-                <File className="h-5 w-5 text-teal-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold" style={{ color: '#2E2A27' }}>Buat Lembar Disposisi</h3>
-                <p className="text-sm font-medium" >Form pembuatan disposisi surat</p>
-              </div>
+  // 2. Bungkus seluruh return JSX dengan createPortal(JSX, document.body)
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
+        onClick={!loading ? onClose : undefined}
+      />
+
+      {/* Modal Content */}
+      <div className="relative bg-zinc-950 border border-white/10 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-white/5 bg-zinc-900/30">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-teal-500/10 rounded-xl border border-teal-500/20 text-teal-400">
+              <FileEdit className="h-5 w-5" />
             </div>
             <div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-neutral-100 rounded-xl transition-colors border border-slate-200"
-              >
-                <X className="w-4 h-4 font-bold leading-none" />
-              </button>
+              <h3 className="text-lg font-semibold text-white">Buat Disposisi</h3>
+              <p className="text-xs text-zinc-500">Instruksi tindak lanjut surat masuk</p>
             </div>
           </div>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="p-2 text-zinc-500 hover:text-white hover:bg-white/10 rounded-full transition-colors disabled:opacity-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          <div className="bg-neutral-50 p-4 rounded-xl mb-6 border border-slate-200 shadow-sm">
-            <h4 className="font-semibold mb-3 flex items-center gap-2" >
-              <span className="text-lg">📧</span> Informasi Surat
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="font-semibold" >Nomor:</span>
-                <span className="ml-2 font-medium text-[#2E2A27]">{surat.nomor_surat || '-'}</span>
-              </div>
-              <div>
-                <span className="font-semibold" >Tanggal:</span>
-                <span className="ml-2 font-medium text-[#2E2A27]">{surat.tanggal_surat || '-'}</span>
-              </div>
-              <div className="md:col-span-2">
-                <span className="font-semibold" >Dari:</span>
-                <span className="ml-2 font-medium text-[#2E2A27]">{surat.asal_instansi || '-'}</span>
-              </div>
-            </div>
+        {/* Scrollable Form Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          
+          {/* Info Surat Card */}
+          <div className="bg-zinc-900/50 rounded-2xl border border-white/5 p-4 relative overflow-hidden">
+             {/* Glow Effect */}
+             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+             
+             <div className="flex items-center gap-2 mb-4 relative z-10">
+                <FileText className="w-4 h-4 text-zinc-500" />
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Detail Surat</span>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+                <div className="space-y-1">
+                   <p className="text-[10px] text-zinc-500 uppercase">Nomor Surat</p>
+                   <p className="text-sm font-medium text-white truncate">{surat.nomor_surat || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                   <p className="text-[10px] text-zinc-500 uppercase flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Tanggal Surat
+                   </p>
+                   <p className="text-sm font-medium text-white">{surat.tanggal_surat || '-'}</p>
+                </div>
+                <div className="md:col-span-2 space-y-1">
+                   <p className="text-[10px] text-zinc-500 uppercase flex items-center gap-1">
+                      <Building className="w-3 h-3" /> Asal Instansi
+                   </p>
+                   <p className="text-sm font-medium text-white">{surat.asal_instansi || '-'}</p>
+                </div>
+             </div>
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-semibold mb-2" >
-                Sifat <span className="text-red-600">*</span>
-              </label>
-              <select
-                value={formData.sifat}
-                onChange={(e) => setFormData({ ...formData, sifat: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#D4A373] focus:border-[#D4A373] text-[#2E2A27] shadow-sm"
-                required
-              >
-                <option value="" className="text-[#6D4C41]">-- Pilih Sifat --</option>
-                {sifatOptions.map(option => (
-                  <option key={option} value={option} className="text-[#2E2A27]">{option}</option>
-                ))}
-              </select>
+          {/* Form Fields */}
+          <form id="disposisi-form" onSubmit={handleSubmit} className="space-y-5">
+            
+            {/* Sifat & Perihal */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1">
+                  Sifat Disposisi <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                   <select
+                    value={formData.sifat}
+                    onChange={(e) => setFormData({ ...formData, sifat: e.target.value })}
+                    className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-zinc-900 appearance-none cursor-pointer transition-all"
+                    required
+                  >
+                    <option value="" className="text-zinc-500">Pilih Sifat</option>
+                    {sifatOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <AlertCircle className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1">
+                  Perihal <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <AlignLeft className="absolute left-4 top-3.5 w-4 h-4 text-zinc-600" />
+                  <textarea
+                    value={formData.perihal}
+                    onChange={(e) => setFormData({ ...formData, perihal: e.target.value })}
+                    className="w-full bg-zinc-900/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 focus:bg-zinc-900 transition-all min-h-[80px]"
+                    placeholder="Tulis perihal disposisi..."
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2" >
-                Perihal <span className="text-red-600">*</span>
-              </label>
-              <textarea
-                value={formData.perihal}
-                onChange={(e) => setFormData({ ...formData, perihal: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#D4A373] focus:border-[#D4A373] text-[#2E2A27] placeholder-[#6D4C41] shadow-sm"
-                rows={3}
-                placeholder="Masukkan perihal disposisi..."
-                required
-              />
+            {/* Tujuan & Instruksi */}
+            <div className="space-y-5">
+               <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1">
+                  Diteruskan Kepada <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                   <select
+                    value={formData.disposisi_kepada_jabatan}
+                    onChange={(e) => setFormData({ ...formData, disposisi_kepada_jabatan: e.target.value })}
+                    className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-zinc-900 appearance-none cursor-pointer transition-all"
+                    required
+                  >
+                    <option value="" className="text-zinc-500">Pilih Jabatan Tujuan</option>
+                    {jabatanOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <User className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1">
+                  Instruksi (Dengan Hormat Harap) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                   <select
+                    value={formData.dengan_hormat_harap}
+                    onChange={(e) => setFormData({ ...formData, dengan_hormat_harap: e.target.value })}
+                    className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-zinc-900 appearance-none cursor-pointer transition-all"
+                    required
+                  >
+                    <option value="" className="text-zinc-500">Pilih Instruksi</option>
+                    {instruksiOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <CornerDownRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2" >
-                Diteruskan Kepada <span className="text-red-600">*</span>
-              </label>
-              <select
-                value={formData.disposisi_kepada_jabatan}
-                onChange={(e) => setFormData({ ...formData, disposisi_kepada_jabatan: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#D4A373] focus:border-[#D4A373] text-[#2E2A27] shadow-sm"
-                required
-              >
-                <option value="" className="text-[#6D4C41]">-- Pilih Jabatan --</option>
-                {jabatanOptions.map(option => (
-                  <option key={option} value={option} className="text-[#2E2A27]">{option}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-2" >
-                Dengan Hormat Harap <span className="text-red-600">*</span>
-              </label>
-              <select
-                value={formData.dengan_hormat_harap}
-                onChange={(e) => setFormData({ ...formData, dengan_hormat_harap: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#D4A373] focus:border-[#D4A373] text-[#2E2A27] shadow-sm"
-                required
-              >
-                <option value="" className="text-[#6D4C41]">-- Pilih Instruksi --</option>
-                {instruksiOptions.map(option => (
-                  <option key={option} value={option} className="text-[#2E2A27]">{option}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-2" >
-                Catatan <span className="text-red-600">*</span>
+            {/* Catatan */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                Catatan Tambahan (Opsional)
               </label>
               <textarea
                 value={formData.catatan}
                 onChange={(e) => setFormData({ ...formData, catatan: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#D4A373] focus:border-[#D4A373] text-[#2E2A27] placeholder-[#6D4C41] shadow-sm"
-                rows={3}
-                placeholder="Masukkan catatan disposisi..."
-                required
+                className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 focus:bg-zinc-900 transition-all min-h-[80px]"
+                placeholder="Tambahkan catatan khusus jika diperlukan..."
               />
             </div>
 
-            <div className="flex justify-end space-x-3 pt-6 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-3 text-[#2E2A27] border border-slate-200 rounded-xl hover:bg-neutral-100 font-semibold transition-all shadow-sm"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-md border border-slate-200 flex items-center gap-x-2 ${loading
-                    ? 'bg-black text-white cursor-not-allowed opacity-75'
-                    : 'bg-black text-white hover:-translate-y-0.5 hover:shadow-lg'
-                  }`}
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Menyimpan...
-                  </>
-                ) : (
-                  <>
-                    <File className="w-4 h-4" /> Simpan Disposisi
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+          </form>
         </div>
+
+        {/* Footer Actions */}
+        <div className="p-6 border-t border-white/5 bg-zinc-900/30 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-6 py-3 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            form="disposisi-form"
+            disabled={loading}
+            className={`px-6 py-3 rounded-xl text-sm font-bold bg-white text-black hover:bg-zinc-200 shadow-lg shadow-white/10 transition-all flex items-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                Menyimpan...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Simpan Disposisi
+              </>
+            )}
+          </button>
+        </div>
+
       </div>
-    </div>
+    </div>,
+    document.body // Target render ke body
   );
 };
 

@@ -18,12 +18,15 @@ import {
     ExternalLink,
     History,
     UserCircle,
-    Loader
+    Loader,
+    ShieldCheck,
+    AlertTriangle,
+    Info
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import LoadingSpinner from '../../components/Ui/LoadingSpinner';
-import isImageFile from '../../utils/isImageFile'; // ✅ Import utilitas deteksi gambar
-import ImageModal from '../../components/Ui/ImageModal'; // ✅ Import komponen modal gambar
+import isImageFile from '../../utils/isImageFile';
+import ImageModal from '../../components/Ui/ImageModal';
 
 const KepalaDisposisiDetail = () => {
     const { id } = useParams();
@@ -37,7 +40,7 @@ const KepalaDisposisiDetail = () => {
     const [error, setError] = useState(null);
     const [feedbackError, setFeedbackError] = useState(null);
     const [logsError, setLogsError] = useState(null);
-    const [selectedImage, setSelectedImage] = useState(null); // ✅ Untuk ImageModal
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const fetchDisposisiDetail = async () => {
         try {
@@ -115,50 +118,32 @@ const KepalaDisposisiDetail = () => {
         });
     };
 
-    const formatFileSize = (bytes) => {
-        if (!bytes) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
-
-    const getFileIcon = (fileType, filename) => {
-        if (!fileType && !filename) return <File className="h-5 w-5" />;
-
-        const type = fileType?.toLowerCase() || filename?.split('.').pop()?.toLowerCase();
-
-        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(type)) {
-            return <ImageIcon className="h-5 w-5" />;
-        }
-        return <File className="h-5 w-5" />;
-    };
-
+    // UI Helper: Styled Badges sesuai Design System
     const StatusBadge = ({ status }) => {
         const getStatusConfig = (status) => {
             switch (status?.toLowerCase()) {
                 case 'diterima':
                 case 'dibaca':
-                    return { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: <Eye className="h-3 w-3" /> };
+                    return { color: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: <Eye className="h-3 w-3" /> };
                 case 'diproses':
                 case 'dalam proses':
-                    return { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: <Clock className="h-3 w-3" /> };
+                    return { color: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20', icon: <Clock className="h-3 w-3" /> };
                 case 'selesai':
-                    return { color: 'bg-green-100 text-green-800 border-green-200', icon: <CheckCircle className="h-3 w-3" /> };
+                    return { color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: <CheckCircle className="h-3 w-3" /> };
                 case 'diteruskan':
-                    return { color: 'bg-purple-100 text-purple-800 border-purple-200', icon: <ExternalLink className="h-3 w-3" /> };
+                    return { color: 'bg-purple-500/10 text-purple-400 border-purple-500/20', icon: <ExternalLink className="h-3 w-3" /> };
                 case 'baru':
                 case 'belum dibaca':
-                    return { color: 'bg-red-100 text-red-800 border-red-200', icon: <AlertCircle className="h-3 w-3" /> };
+                    return { color: 'bg-red-500/10 text-red-400 border-red-500/20', icon: <AlertCircle className="h-3 w-3" /> };
                 default:
-                    return { color: 'bg-gray-100 text-black border-gray-200', icon: <AlertCircle className="h-3 w-3" /> };
+                    return { color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20', icon: <AlertCircle className="h-3 w-3" /> };
             }
         };
 
         const config = getStatusConfig(status);
 
         return (
-            <span className={`inline-flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium border ${config.color}`}>
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${config.color} backdrop-blur-sm`}>
                 {config.icon}
                 {status || 'Unknown'}
             </span>
@@ -168,16 +153,16 @@ const KepalaDisposisiDetail = () => {
     const SifatBadge = ({ sifat }) => {
         const getSifatColor = (sifat) => {
             switch (sifat) {
-                case 'Sangat Segera': return 'bg-red-500 text-white';
-                case 'Segera': return 'bg-orange-500 text-white';
-                case 'Biasa': return 'bg-blue-500 text-white';
-                case 'Rahasia': return 'bg-purple-500 text-white';
-                default: return 'bg-gray-500 text-white';
+                case 'Sangat Segera': return 'bg-red-500/10 text-red-400 border-red-500/20';
+                case 'Segera': return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+                case 'Biasa': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                case 'Rahasia': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+                default: return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
             }
         };
 
         return (
-            <span className='inline-flex items-center px-4 py-2 bg-white border-teal-400 border text-black rounded-full text-sm font-medium'>
+            <span className={`inline-flex items-center px-3 py-1.5 border rounded-full text-xs font-medium backdrop-blur-sm ${getSifatColor(sifat)}`}>
                 {sifat}
             </span>
         );
@@ -185,7 +170,7 @@ const KepalaDisposisiDetail = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <LoadingSpinner text='Memuat detail disposisi' />
             </div>
         );
@@ -193,166 +178,179 @@ const KepalaDisposisiDetail = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 p-4">
-                <div className="max-w-4xl mx-auto">
-                    <div className="bg-white border border-gray-200 rounded-lg p-6 text-center shadow-sm">
-                        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                        <h2 className="text-lg font-semibold text-black mb-2">Error</h2>
-                        <p className="text-red-600 mb-4">{error}</p>
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
-                        >
-                            Kembali
-                        </button>
+            <div className="min-h-screen p-4 flex items-center justify-center">
+                <div className="max-w-md w-full bg-zinc-900/50 backdrop-blur-sm border border-red-500/20 rounded-3xl p-8 text-center">
+                    <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+                        <AlertTriangle className="h-8 w-8 text-red-500" />
                     </div>
+                    <h2 className="text-xl font-light text-white mb-2">Terjadi Kesalahan</h2>
+                    <p className="text-zinc-500 text-sm mb-8">{error}</p>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="w-full px-4 py-3 bg-white text-black hover:bg-zinc-200 rounded-2xl font-bold transition-all shadow-lg shadow-white/5"
+                    >
+                        Kembali
+                    </button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen">
-            <div className="">
+        <div className="min-h-screen text-white font-sans selection:bg-white/20 pb-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-                <div className="mb-2 bg-white shadow-lg rounded-2xl md:p-5 p-3">
+                {/* === HEADER SECTION === */}
+                <div className="mb-8">
                     <button
                         onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-gray-600 hover:text-black mb-4 transition-colors"
+                        className="group flex items-center gap-2 text-zinc-500 hover:text-white mb-6 transition-colors text-sm font-medium px-4 py-2 rounded-xl hover:bg-white/5 w-fit"
                     >
-                        <ArrowLeft className="h-4 w-4" />
+                        <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                         Kembali
                     </button>
 
-                    <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                            <h1 className="text-lg font-bold text-black mb-2 flex items-center gap-2">
-                                <FileText className="h-6 w-6 text-teal-400" />
-                                Detail Disposisi
-                            </h1>
-                            <div className="flex items-center gap-3">
-                                <SifatBadge sifat={disposisi?.sifat} />
-                                <StatusBadge status={disposisi?.status} />
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl backdrop-blur-sm">
+                        <div className="space-y-2">
+                             <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-white/5 rounded-lg border border-white/5">
+                                    <FileText className="w-5 h-5 text-zinc-400" />
+                                </div>
+                                <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">
+                                    Detail Dokumen
+                                </p>
                             </div>
+                            <h1 className="text-2xl md:text-3xl font-light tracking-tight text-white">
+                                Disposisi <span className="font-semibold text-zinc-400">Surat Masuk</span>
+                            </h1>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <SifatBadge sifat={disposisi?.sifat} />
+                            <StatusBadge status={disposisi?.status} />
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    <div className="lg:col-span-2 space-y-4">
+                    {/* === LEFT COLUMN: INFO & CONTENT === */}
+                    <div className="lg:col-span-2 space-y-6">
 
-                        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4">
-                            <h2 className="text-lg font-semibold text-black mb-4">Informasi Disposisi</h2>
+                        {/* 1. Informasi Disposisi Card */}
+                        <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+                            <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                                <Info className="h-5 w-5 text-zinc-500" />
+                                Informasi Utama
+                            </h2>
 
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Perihal</label>
-                                    <p className="text-black bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Perihal</label>
+                                    <div className="text-zinc-200 bg-black/20 p-4 rounded-2xl border border-white/5 leading-relaxed">
                                         {disposisi?.perihal || '-'}
-                                    </p>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-600 mb-1">Nomor Surat</label>
-                                        <p className="text-black">{disposisi?.nomor_surat || '-'}</p>
+                                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Nomor Surat</label>
+                                        <p className="text-white font-medium bg-zinc-900/50 px-4 py-3 rounded-xl border border-white/5">{disposisi?.nomor_surat || '-'}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-600 mb-1">Nomor Agenda</label>
-                                        <p className="text-black">{disposisi?.nomor_agenda || '-'}</p>
+                                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Nomor Agenda</label>
+                                        <p className="text-white font-medium bg-zinc-900/50 px-4 py-3 rounded-xl border border-white/5">{disposisi?.nomor_agenda || '-'}</p>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Asal Instansi</label>
-                                    <p className="text-black">{disposisi?.asal_instansi || '-'}</p>
+                                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Asal Instansi</label>
+                                    <div className="flex items-center gap-3 bg-zinc-900/50 px-4 py-3 rounded-xl border border-white/5 text-zinc-300">
+                                        <Building className="h-4 w-4 text-zinc-500" />
+                                        {disposisi?.asal_instansi || '-'}
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-600 mb-1">Tanggal Surat</label>
-                                        <p className="text-black flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-teal-400" />
+                                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Tanggal Surat</label>
+                                        <p className="text-zinc-300 flex items-center gap-2 bg-zinc-900/50 px-4 py-3 rounded-xl border border-white/5">
+                                            <Calendar className="h-4 w-4 text-zinc-500" />
                                             {formatDateOnly(disposisi?.tanggal_surat)}
                                         </p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-600 mb-1">Diterima Tanggal</label>
-                                        <p className="text-black flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-teal-400" />
+                                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Diterima Tanggal</label>
+                                        <p className="text-zinc-300 flex items-center gap-2 bg-zinc-900/50 px-4 py-3 rounded-xl border border-white/5">
+                                            <Calendar className="h-4 w-4 text-zinc-500" />
                                             {formatDateOnly(disposisi?.diterima_tanggal)}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Disposisi Kepada</label>
-                                    <p className="text-black flex items-center gap-2">
-                                        <User className="h-4 w-4 text-teal-400" />
+                                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Disposisi Kepada</label>
+                                    <p className="text-white flex items-center gap-2 bg-zinc-900/50 px-4 py-3 rounded-xl border border-white/5">
+                                        <User className="h-4 w-4 text-zinc-500" />
                                         {disposisi?.disposisi_kepada_jabatan || '-'}
                                     </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Instruksi</label>
-                                    <p className="text-black bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Instruksi</label>
+                                    <div className="text-zinc-300 bg-black/20 p-4 rounded-2xl border border-white/5">
                                         {disposisi?.dengan_hormat_harap || '-'}
-                                    </p>
+                                    </div>
                                 </div>
 
                                 {disposisi?.catatan && (
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-600 mb-1">Catatan</label>
-                                        <p className="text-black bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Catatan</label>
+                                        <div className="text-zinc-300 bg-yellow-500/5 p-4 rounded-2xl border border-yellow-500/10">
                                             {disposisi.catatan}
-                                        </p>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        {/* ✅ Lampiran Surat — Gunakan isImageFile & ImageModal */}
+                        {/* 2. Lampiran Surat */}
                         {disposisi?.photos && disposisi.photos.length > 0 && (
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <h2 className="text-lg font-semibold text-black mb-4 flex items-center gap-2">
-                                    <ImageIcon className="h-5 w-5 text-teal-400" />
-                                    Lampiran Surat ({disposisi.photos.length})
+                            <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+                                <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                                    <ImageIcon className="h-5 w-5 text-zinc-500" />
+                                    Lampiran Surat <span className="text-zinc-500 text-sm font-normal">({disposisi.photos.length})</span>
                                 </h2>
 
-                                <div className="flex flex-wrap gap-2">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {disposisi.photos.map((photo, index) => {
-                                        const isImage = isImageFile(photo); // ✅ Gunakan utilitas
-
+                                        const isImage = isImageFile(photo);
                                         return (
                                             <div
                                                 key={photo.id}
-                                                className="cursor-pointer rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
+                                                className="group cursor-pointer relative rounded-2xl overflow-hidden border border-white/5 bg-black/40 hover:border-white/20 transition-all duration-300"
                                                 onClick={() => {
-                                                    if (isImage) {
-                                                        setSelectedImage(photo.url);
-                                                    } else {
-                                                        window.open(photo.url, '_blank', 'noopener,noreferrer');
-                                                    }
+                                                    if (isImage) setSelectedImage(photo.url);
+                                                    else window.open(photo.url, '_blank', 'noopener,noreferrer');
                                                 }}
-                                                title={isImage ? "Klik untuk memperbesar gambar" : "Klik untuk membuka file"}
                                             >
-                                                <div className="w-20 h-20 bg-white border border-slate-200 flex items-center justify-center">
+                                                <div className="aspect-square flex items-center justify-center relative">
                                                     {isImage ? (
-                                                        <img
-                                                            src={photo.url}
-                                                            alt={`Lampiran ${index + 1}: ${photo.filename}`}
-                                                            className="w-full h-full object-cover transition-transform duration-200 hover:scale-105"
-                                                            onError={(e) => {
-                                                                e.target.src = 'https://via.placeholder.com/160x160/ffcccc/333333?text=🖼️+No+Image';
-                                                                e.target.className = "w-full h-full object-cover";
-                                                            }}
-                                                        />
+                                                        <>
+                                                            <img
+                                                                src={photo.url}
+                                                                alt={`Lampiran ${index + 1}`}
+                                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                                                                onError={(e) => {
+                                                                    e.target.src = 'https://via.placeholder.com/160x160/333/666?text=No+Img';
+                                                                }}
+                                                            />
+                                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                                        </>
                                                     ) : (
-                                                        <div className="text-gray-500 flex flex-col justify-center items-center p-2 text-center">
-                                                            <FileText className="w-8 h-8 mb-1" />
-                                                            <span className="text-xs font-medium break-words max-w-full">
-                                                                {photo.filename.split('.').pop()?.toUpperCase() || 'FILE'}
+                                                        <div className="text-zinc-500 group-hover:text-white transition-colors flex flex-col items-center p-2 text-center">
+                                                            <FileText className="w-8 h-8 mb-2" />
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider truncate w-full px-2">
+                                                                {photo.filename.split('.').pop() || 'FILE'}
                                                             </span>
                                                         </div>
                                                     )}
@@ -364,94 +362,75 @@ const KepalaDisposisiDetail = () => {
                             </div>
                         )}
 
-                        {/* ✅ Feedback dengan Lampiran — Gunakan isImageFile & ImageModal */}
-                        <div className="bg-neutral-50 rounded-2xl shadow-lg border border-slate-200 p-4">
-                            <h2 className="text-lg font-semibold text-black mb-4 flex items-center gap-2">
-                                <MessageSquare className="h-5 w-5 text-blue-600" />
+                        {/* 3. Feedback Section */}
+                        <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+                            <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                                <MessageSquare className="h-5 w-5 text-zinc-500" />
                                 Feedback Disposisi
                             </h2>
 
                             {loadingFeedback ? (
-                                <div className="text-center py-8">
-                                    <LoadingSpinner text='Memuat feedback'/>
+                                <div className="py-10">
+                                    <LoadingSpinner text='Memuat feedback' />
                                 </div>
                             ) : feedbackError ? (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                    <div className="flex items-center gap-2">
-                                        <AlertCircle className="h-4 w-4 text-red-600" />
-                                        <p className="text-red-800 font-medium">Error</p>
-                                    </div>
-                                    <p className="text-red-700 text-sm mt-1">{feedbackError}</p>
+                                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-center gap-3">
+                                    <AlertCircle className="h-5 w-5 text-red-500" />
+                                    <p className="text-red-400 text-sm">{feedbackError}</p>
                                 </div>
                             ) : feedback.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <MessageSquare className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                                    <p className="text-gray-600">Belum ada feedback untuk disposisi ini</p>
+                                <div className="text-center py-12 border border-dashed border-white/5 rounded-2xl bg-white/[0.02]">
+                                    <MessageSquare className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
+                                    <p className="text-zinc-500 text-sm">Belum ada feedback untuk disposisi ini</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     {feedback.map((item) => (
-                                        <div key={item.id} className="">
-
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <p className="font-medium text-black">{item.user_name || 'Unknown'}</p>
-                                                    <p className="font-medium text-gray-600 text-sm">{item.user_jabatan || 'Unknown'}</p>
-                                                    <p className="text-xs text-gray-500">{formatDate(item.created_at)}</p>
+                                        <div key={item.id} className="bg-zinc-950/50 border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-colors">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 border border-white/5">
+                                                        <UserCircle className="w-6 h-6" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-white text-sm">{item.user_name || 'Unknown'}</p>
+                                                        <p className="text-xs text-zinc-500">{item.user_jabatan || 'Unknown'}</p>
+                                                    </div>
                                                 </div>
+                                                <span className="text-[10px] text-zinc-600 font-medium bg-white/5 px-2 py-1 rounded-lg">
+                                                    {formatDate(item.created_at)}
+                                                </span>
                                             </div>
 
-                                            <div className="mb-3">
-                                                <p className="text-black bg-white p-3 rounded-lg border border-gray-200">
-                                                    {item.notes || 'Tidak ada catatan'}
-                                                </p>
+                                            <div className="text-zinc-300 text-sm leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5 mb-4">
+                                                {item.notes || 'Tidak ada catatan'}
                                             </div>
 
-                                            {/* ✅ Lampiran Feedback — Gunakan isImageFile & ImageModal */}
                                             {item.files && item.files.length > 0 && (
                                                 <div className="mt-4">
-                                                    <label className="block text-xs font-medium text-gray-600 mb-3">
+                                                    <label className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3">
                                                         Lampiran ({item.files.length})
                                                     </label>
-                                                    <div className="flex flex-wrap gap-2">
+                                                    <div className="flex flex-wrap gap-3">
                                                         {item.files.map((file) => {
                                                             const cleanUrl = file.url?.trim();
-                                                            const isImage = isImageFile(file); // ✅ Gunakan utilitas
-
+                                                            const isImage = isImageFile(file);
                                                             return (
                                                                 <div
                                                                     key={file.id}
-                                                                    className="cursor-pointer rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 aspect-square flex items-center justify-center bg-gray-50"
+                                                                    className="w-16 h-16 rounded-xl overflow-hidden border border-white/5 bg-zinc-900 cursor-pointer hover:border-white/20 transition-all"
                                                                     onClick={() => {
-                                                                        if (isImage) {
-                                                                            setSelectedImage(cleanUrl);
-                                                                        } else {
-                                                                            window.open(cleanUrl, '_blank', 'noopener,noreferrer');
-                                                                        }
+                                                                        if (isImage) setSelectedImage(cleanUrl);
+                                                                        else window.open(cleanUrl, '_blank', 'noopener,noreferrer');
                                                                     }}
-                                                                    title={isImage ? "Klik untuk memperbesar gambar" : "Klik untuk membuka file"}
                                                                 >
-                                                                    <div className="w-20 h-20 bg-white flex items-center justify-center">
-                                                                        {isImage ? (
-                                                                            <img
-                                                                                src={cleanUrl}
-                                                                                alt={`Lampiran: ${file.filename}`}
-                                                                                className="w-full h-full object-cover transition-transform duration-200 hover:scale-105"
-                                                                                onError={(e) => {
-                                                                                    console.error('Gagal muat gambar:', cleanUrl);
-                                                                                    e.target.src = 'https://via.placeholder.com/160x160/ffcccc/333333?text=🖼️+Error';
-                                                                                    e.target.className = "w-full h-full object-cover";
-                                                                                }}
-                                                                            />
-                                                                        ) : (
-                                                                            <div className="text-gray-500 flex flex-col justify-center items-center p-1 text-center">
-                                                                                <FileText className="w-6 h-6 mb-1" />
-                                                                                <span className="text-xs font-bold break-words max-w-full">
-                                                                                    {file.filename.split('.').pop()?.toUpperCase() || 'FILE'}
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                    {isImage ? (
+                                                                        <img src={cleanUrl} alt="File" className="w-full h-full object-cover opacity-70 hover:opacity-100 transition-opacity" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-zinc-500">
+                                                                            <FileText className="w-6 h-6" />
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })}
@@ -465,79 +444,68 @@ const KepalaDisposisiDetail = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-                            <h2 className="text-lg font-semibold text-black mb-4 flex items-center gap-2">
-                                <History className="h-5 w-5 text-teal-600" />
+                    {/* === RIGHT COLUMN: LOGS === */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 sticky top-6">
+                            <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                                <History className="h-5 w-5 text-zinc-500" />
                                 Riwayat Status
                             </h2>
 
                             {loadingLogs ? (
-                                <div className="text-center py-8">
+                                <div className="py-10">
                                     <LoadingSpinner text='Memuat logs' />
                                 </div>
                             ) : logsError ? (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                    <div className="flex items-center gap-2">
-                                        <AlertCircle className="h-4 w-4 text-red-600" />
-                                        <p className="text-red-800 font-medium">Error</p>
-                                    </div>
-                                    <p className="text-red-700 text-sm mt-1">{logsError}</p>
+                                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
+                                    <p className="text-red-400 text-xs">{logsError}</p>
                                 </div>
                             ) : statusLogs.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <History className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                                    <p className="text-gray-600">Belum ada riwayat status</p>
+                                <div className="text-center py-10">
+                                    <p className="text-zinc-500 text-sm">Belum ada riwayat</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    {statusLogs.map((log, index) => (
-                                        <div key={log.id} className="relative pb-6 last:pb-0">
-                                            {index !== statusLogs.length - 1 && (
-                                                <div className="absolute left-3 top-8 h-full w-0.5 bg-gray-200"></div>
-                                            )}
+                                <div className="relative pl-2">
+                                    {/* Vertical Line */}
+                                    <div className="absolute left-[11px] top-2 bottom-2 w-px bg-white/10"></div>
 
-                                            <div className="flex items-start gap-3">
-                                                <div className="flex-shrink-0 relative">
-                                                    <div className="w-6 h-6 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center shadow-sm">
-                                                        <div className="w-2 h-2 rounded-full bg-teal-400"></div>
-                                                    </div>
+                                    <div className="space-y-8">
+                                        {statusLogs.map((log) => (
+                                            <div key={log.id} className="relative pl-8">
+                                                {/* Dot */}
+                                                <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-zinc-950 border border-zinc-700 flex items-center justify-center z-10">
+                                                    <div className="w-2 h-2 rounded-full bg-white/50"></div>
                                                 </div>
 
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="bg-neutral-50 rounded-xl p-3 border border-teal-200">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <StatusBadge status={log.status} />
-                                                            <span className="text-xs text-gray-500">
-                                                                {new Date(log.timestamp).toLocaleTimeString('id-ID', {
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit'
-                                                                })}
-                                                            </span>
-                                                        </div>
-
-                                                        {log.keterangan && (
-                                                            <p className="text-sm text-gray-700 mb-2">
-                                                                {log.keterangan}
-                                                            </p>
-                                                        )}
+                                                <div className="bg-black/20 rounded-2xl p-4 border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <StatusBadge status={log.status} />
                                                     </div>
 
-                                                    <p className="text-xs text-gray-500 mt-1">
-                                                        {formatDate(log.timestamp)}
-                                                    </p>
+                                                    {log.keterangan && (
+                                                        <p className="text-sm text-zinc-300 mb-3 leading-relaxed">
+                                                            {log.keterangan}
+                                                        </p>
+                                                    )}
+
+                                                    <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-medium uppercase tracking-wider">
+                                                        <Clock className="w-3 h-3" />
+                                                        {new Date(log.timestamp).toLocaleDateString('id-ID', {
+                                                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                        })}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
+
                 </div>
             </div>
 
-            {/* ✅ Gunakan komponen ImageModal — konsisten di seluruh aplikasi */}
             <ImageModal
                 selectedImage={selectedImage}
                 setSelectedImage={setSelectedImage}

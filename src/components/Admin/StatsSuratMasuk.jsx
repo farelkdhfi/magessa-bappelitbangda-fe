@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
-import { Mail, Plus, CheckCircle, TrendingUp, AlertCircle, Calendar } from 'lucide-react'
+import { Mail, Plus, CheckCircle2, TrendingUp, AlertCircle, Calendar, ArrowUpRight, Inbox, BarChart3, PieChart as PieIcon } from 'lucide-react'
 import { api } from '../../utils/api'
 import toast from 'react-hot-toast'
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip, XAxis, YAxis, CartesianGrid, BarChart, Bar } from 'recharts'
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, XAxis, YAxis, CartesianGrid, BarChart, Bar } from 'recharts'
 import { Link } from 'react-router-dom'
 import SuratMasukTerbaru from './SuratMasukTerbaru.jsx'
 
@@ -25,17 +24,9 @@ const StatsSuratMasuk = () => {
             setSuratData(suratResponse.data?.data || [])
         } catch (err) {
             console.error('Error fetching data:', err)
-            if (err.response) {
-                const errorMessage = err.response.data?.error || err.response.data?.message || `Server error: ${err.response.status}`
-                setError(errorMessage)
-                toast.error(errorMessage)
-            } else if (err.request) {
-                setError('Tidak ada respon dari server. Pastikan server backend berjalan.')
-                toast.error('Tidak ada respon dari server')
-            } else {
-                setError('Terjadi kesalahan saat mengambil data')
-                toast.error('Terjadi kesalahan saat mengambil data')
-            }
+            const errorMessage = err.response?.data?.error || 'Gagal memuat data'
+            setError(errorMessage)
+            toast.error(errorMessage)
         } finally {
             setLoading(false)
         }
@@ -47,29 +38,20 @@ const StatsSuratMasuk = () => {
     const sudahDibaca = suratData.filter(surat => surat.status === 'sudah dibaca').length
     const persentaseBaca = totalSurat > 0 ? ((sudahDibaca / totalSurat) * 100).toFixed(1) : 0
 
-    // teal color palette for charts
+    // ELEGANT PALETTE FOR CHARTS
     const pieData = [
-        { name: 'Belum Dibaca', value: belumDibaca, color: '#000000' },
-        { name: 'Sudah Dibaca', value: sudahDibaca, color: '#00d5be' }
+        { name: 'Belum Dibaca', value: belumDibaca, color: '#27272a' }, // Zinc-800
+        { name: 'Sudah Dibaca', value: sudahDibaca, color: '#ffffff' }  // White
     ]
 
     // Calculate monthly data for bar chart
     const getMonthlyData = () => {
-        const months = [
-            'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-            'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-        ]
-
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
         const currentYear = new Date().getFullYear()
         const monthlyCount = {}
 
         months.forEach((month, index) => {
-            monthlyCount[index] = {
-                month: month,
-                total: 0,
-                belumDibaca: 0,
-                sudahDibaca: 0
-            }
+            monthlyCount[index] = { month: month, total: 0, belumDibaca: 0, sudahDibaca: 0 }
         })
 
         suratData.forEach(surat => {
@@ -84,429 +66,269 @@ const StatsSuratMasuk = () => {
                 }
             }
         })
-
         return Object.values(monthlyCount)
     }
 
     const monthlyData = getMonthlyData()
 
-    const StatCard = ({ title, count, icon: Icon, subtitle, trend, bgColor = 'bg-white', borderColor = 'border-gray-200', titleColor = 'text-gray-400', countColor = 'text-black', bgIcon = 'bg-teal-400', iconColor = 'text-white' }) => (
-        <div className={`${bgColor} w-full p-4 rounded-xl shadow-lg border-2 ${borderColor}`}>
-            <div className="flex items-start gap-7 justify-between">
-                <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                        <p className={`text-sm font-semibold ${titleColor} whitespace-nowrap`}>{title}</p>
-                        {trend && (
-                            <div className="flex items-center gap-1 text-teal-400">
-                                <TrendingUp className="w-3 h-3" />
-                                <span className="text-xs font-medium whitespace-nowrap">+{trend}%</span>
-                            </div>
-                        )}
+    // --- SUB-COMPONENTS ---
+
+    // 1. Kartu Statistik Sekunder (Secondary Cards)
+    const StatCard = ({ title, count, icon: Icon, subtitle, trend, trendUp }) => (
+        <div className="group relative bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 hover:border-white/10 transition-all duration-500 overflow-hidden">
+            {/* Background Glow Effect */}
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors duration-500" />
+            
+            <div className="relative z-10 flex flex-col justify-between h-full">
+                <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-zinc-800/50 rounded-2xl border border-white/5 text-zinc-400 group-hover:text-white group-hover:bg-zinc-800 transition-colors">
+                        <Icon className="w-5 h-5" />
                     </div>
-                    <p className={`text-3xl font-bold ${countColor} leading-tight whitespace-nowrap`}>{count}</p>
-                    {subtitle && (
-                        <p className="text-xs text-gray-500 mt-1 font-medium whitespace-nowrap">{subtitle}</p>
+                    {trend && (
+                        <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border ${trendUp ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
+                            <TrendingUp className="w-3 h-3" />
+                            {trend}%
+                        </div>
                     )}
                 </div>
-                <div className={`${bgIcon} p-3 self-end rounded-xl shadow-lg transition-all duration-300 animate-bounce`}>
-                    <Icon className={`w-6 h-6 ${iconColor}`} />
+                
+                <div>
+                    <h3 className="text-3xl font-semibold text-white tracking-tight mb-1">{count}</h3>
+                    <p className="text-sm text-zinc-500 font-medium">{title}</p>
+                    {subtitle && <p className="text-xs text-zinc-600 mt-2">{subtitle}</p>}
                 </div>
             </div>
         </div>
     )
 
-    // SHIMMER SKELETON COMPONENT (ANIMATED GRADIENT)
-    const Skeleton = ({ width = '100%', height, radius = 'lg' }) => (
-        <div
-            className={`bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-shimmer rounded-${radius}`}
-            style={{
-                backgroundSize: '200% 100%',
-                width,
-                height,
-            }}
-        />
+    // 2. Loading Skeleton
+    const Skeleton = ({ className }) => (
+        <div className={`bg-zinc-800/50 animate-pulse rounded-2xl ${className}`} />
     )
 
-    // WIREFRAME LOADING COMPONENT WITH SHIMMER EFFECT
     if (loading) {
         return (
-            <div className="p-6 bg-gray-50 space-y-6">
-                {/* Header Section */}
-                <div className="flex flex-row gap-x-2 items-center mb-5 w-full">
-                    <div className="w-1 h-5 bg-gray-300 rounded-full"></div>
-                    <Skeleton width="100px" height="16px" radius="full" />
+            <div className="space-y-8 p-6">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <Skeleton className="w-48 h-8" />
                 </div>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                            <div className="space-y-4">
-                                <Skeleton width="80px" height="16px" radius="full" />
-                                <Skeleton width="60px" height="32px" radius="md" />
-                                <Skeleton width="100px" height="14px" radius="full" />
-                            </div>
-                        </div>
-                    ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-48" />)}
                 </div>
-
-                {/* Charts Section */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Pie Chart Skeleton */}
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                        <div className="space-y-4">
-                            <Skeleton width="70px" height="18px" radius="full" />
-                            <Skeleton width="120px" height="14px" radius="full" />
-                            <Skeleton width="100%" height="280px" radius="xl" />
-                        </div>
-                    </div>
-
-                    {/* Bar Chart Skeleton */}
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                        <div className="space-y-4">
-                            <Skeleton width="100px" height="18px" radius="full" />
-                            <Skeleton width="140px" height="14px" radius="full" />
-                            <Skeleton width="100%" height="280px" radius="xl" />
-                        </div>
-                    </div>
-
-                    {/* Monthly Summary Skeleton */}
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                        <div className="space-y-4">
-                            <Skeleton width="90px" height="18px" radius="full" />
-                            <div className="grid grid-cols-2 gap-3 mt-4">
-                                {[...Array(8)].map((_, i) => (
-                                    <div key={i} className="bg-gray-100 rounded-xl p-4">
-                                        <Skeleton width="50px" height="16px" radius="full" />
-                                        <Skeleton width="40px" height="20px" radius="md" className="mt-2" />
-                                        <div className="flex flex-col gap-1 mt-3">
-                                            <Skeleton width="40px" height="12px" radius="full" />
-                                            <Skeleton width="30px" height="12px" radius="full" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Quick Action + Surat List Placeholder */}
-                <div className="flex md:flex-row flex-col gap-4">
-                    <div className="bg-teal-400 rounded-xl shadow-lg p-5 h-32"></div>
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 h-64"></div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-96">
+                    <Skeleton className="lg:col-span-1" />
+                    <Skeleton className="lg:col-span-2" />
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="">
-
-            {/*little header */}
-            <div className='flex flex-row gap-x-2 items-center mb-5 w-full'>
-                <div>
-                    <div className='w-1 h-5 bg-slate-300 rounded-full'></div>
+        <div className="min-h-screen text-white font-sans selection:bg-white/20">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+                <div className="space-y-1">
+                    <h1 className="text-3xl font-light tracking-tight text-white">
+                        Dashboard <span className="font-semibold text-zinc-400">Surat Masuk</span>
+                    </h1>
+                    <p className="text-sm text-zinc-500 font-medium tracking-wide uppercase">Overview & Analytics</p>
                 </div>
-                <p className='text-sm text-slate-300 font-bold whitespace-nowrap uppercase'>Surat Masuk</p>
+                <div className="flex items-center gap-2 text-xs text-zinc-500 bg-zinc-900/50 px-4 py-2 rounded-full border border-white/5">
+                    <Calendar className="w-3 h-3" />
+                    <span>Tahun {new Date().getFullYear()}</span>
+                </div>
             </div>
 
-            <div className=' space-y-5 ' >
-                {/* statcard */}
-                {/* Desktop */}
-                <div className="hidden md:grid md:grid-cols-4 gap-2">
-                    <div className='flex flex-col justify-between'>
-                        <p className='text-lg font-semibold capitalize'>total surat masuk</p>
-                        <p className='text-5xl font-bold'>{totalSurat}</p>
-                        <p className='text-xs'>(Total surat yang anda buat)</p>
+            <div className="space-y-6">
+                {/* 1. Statistics Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    {/* Primary Card - High Contrast (White) */}
+                    <div className="md:col-span-2 lg:col-span-1 bg-white text-black rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between group shadow-xl shadow-white/5">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 transform translate-x-4 -translate-y-4 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-500">
+                            <Inbox className="w-32 h-32" />
+                        </div>
+                        
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="p-3 bg-black/5 rounded-2xl">
+                                    <Inbox className="w-6 h-6 text-black" />
+                                </div>
+                                <span className="px-3 py-1 bg-black text-white text-xs font-bold rounded-full">TOTAL</span>
+                            </div>
+                            <div>
+                                <h3 className="text-6xl font-bold tracking-tighter mb-2">{totalSurat}</h3>
+                                <p className="text-sm font-medium text-zinc-600">Total Semua Surat</p>
+                            </div>
+                        </div>
+                        
+                        <div className="relative z-10 mt-6 pt-6 border-t border-black/10">
+                            <div className="flex items-center justify-between text-xs font-medium text-zinc-500">
+                                <span>Update Terakhir</span>
+                                <span>Baru saja</span>
+                            </div>
+                        </div>
                     </div>
+
+                    {/* Secondary Cards */}
                     <StatCard
-                        title="Belum Dibaca"
+                        title="Perlu Tindakan"
                         count={belumDibaca}
-                        subtitle="Memerlukan perhatian"
+                        subtitle="Surat belum dibaca"
                         icon={AlertCircle}
-                        bgIcon='bg-white'
-                        iconColor='text-black'
+                        trend={belumDibaca > 0 ? "5.2" : "0"}
+                        trendUp={false} // Merah jika ada tumpukan
                     />
+
                     <StatCard
-                        title="Sudah Dibaca"
+                        title="Selesai"
                         count={sudahDibaca}
-                        subtitle="Telah diproses"
-                        borderColor='border-teal-200'
-                        icon={CheckCircle}
+                        subtitle="Telah diarsipkan"
+                        icon={CheckCircle2}
+                        trend="12.5"
+                        trendUp={true}
                     />
+
                     <StatCard
-                        title="Tingkat Baca"
+                        title="Efektivitas"
                         count={`${persentaseBaca}%`}
-                        subtitle="Persentase dibaca"
+                        subtitle="Completion Rate"
                         icon={TrendingUp}
-                        bgColor='bg-black'
-                        titleColor='text-white'
-                        countColor='text-white'
-                        bgIcon='bg-white'
-                        iconColor='text-teal-400'
-                        trend={persentaseBaca > 50 ? "12.5" : null}
-                        borderColor='border-black'
+                        trend={parseFloat(persentaseBaca) > 50 ? "8.4" : "2.1"}
+                        trendUp={true}
                     />
                 </div>
 
-                {/* mobile */}
-                <div className="flex w-full md:hidden gap-2 overflow-x-auto">
-                    <div className='flex flex-col justify-between whitespace-nowrap'>
-                        <p className='text-lg font-semibold capitalize'>total surat masuk</p>
-                        <p className='text-5xl font-bold'>{totalSurat}</p>
-                        <p className='text-xs'>(Total surat yang anda buat)</p>
-                    </div>
-                    <div>
-
-                        <StatCard
-                            title="Belum Dibaca"
-                            count={belumDibaca}
-                            subtitle="Memerlukan perhatian"
-                            icon={AlertCircle}
-                            bgIcon='bg-white'
-                            iconColor='text-black'
-                            className="w-full flex-1 flex"
-                        />
-                    </div>
-
-                    <StatCard
-                        title="Sudah Dibaca"
-                        count={sudahDibaca}
-                        subtitle="Telah diproses"
-                        borderColor='border-teal-200'
-                        icon={CheckCircle}
-                    />
-                    <StatCard
-                        title="Tingkat Baca"
-                        count={`${persentaseBaca}%`}
-                        subtitle="Persentase dibaca"
-                        icon={TrendingUp}
-                        bgColor='bg-black'
-                        titleColor='text-white'
-                        countColor='text-white'
-                        bgIcon='bg-white'
-                        iconColor='text-teal-400'
-                        trend={persentaseBaca > 50 ? "12.5" : null}
-                        borderColor='border-black'
-                    />
-                </div>
-
-                {/* Charts Section */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    {/* Pie Chart */}
-                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-                        <div className="flex items-center justify-between mb-6">
+                {/* 2. Charts Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    {/* Pie Chart Card */}
+                    <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-8 flex flex-col items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-50 pointer-events-none"/>
+                        
+                        <div className="w-full flex justify-between items-start mb-4 z-10">
                             <div>
-                                <h2 className="text-lg font-semibold text-black">Status</h2>
-                                <p className="text-sm text-gray-400 mt-1">Status surat masuk </p>
+                                <h3 className="text-lg font-semibold text-white">Distribusi Status</h3>
+                                <p className="text-xs text-zinc-500">Rasio Baca vs Belum</p>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 bg-black rounded-full"></div>
-                                    <span className="text-xs text-gray-400 font-medium">Belum</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 bg-teal-400 rounded-full"></div>
-                                    <span className="text-xs text-gray-400 font-medium">Sudah</span>
-                                </div>
+                            <div className="p-2 bg-white/5 rounded-lg">
+                                <PieIcon className="w-4 h-4 text-zinc-400" />
                             </div>
                         </div>
 
-                        {totalSurat > 0 ? (
-                            <div className="h-72">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={pieData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={100}
-                                            paddingAngle={3}
-                                            dataKey="value"
-                                        >
-                                            {pieData.map((entry, index) => (
-                                                <Cell
-                                                    key={`cell-${index}`}
-                                                    fill={entry.color}
-                                                    stroke="white"
-                                                    strokeWidth={3}
-                                                />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip
-                                            contentStyle={{
-                                                backgroundColor: 'white',
-                                                border: '1px solid #f6339a',
-                                                borderRadius: '12px',
-                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                                                fontSize: '14px',
-                                                color: 'black'
-                                            }}
-                                            formatter={(value) => [value, 'Jumlah']}
-                                        />
-                                        <Legend
-                                            verticalAlign="bottom"
-                                            height={36}
-                                            iconType="circle"
-                                            wrapperStyle={{
-                                                paddingTop: '20px',
-                                                fontSize: '14px',
-                                                fontWeight: '400',
-                                                color: 'black'
-                                            }}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                        <div className="w-full h-[220px] relative z-10">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={pieData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {pieData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: '#18181b', borderColor: '#333', color: '#fff', borderRadius: '12px', padding: '10px' }}
+                                        itemStyle={{ color: '#fff', fontSize: '12px' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            {/* Center Text Overlay */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-2xl font-bold text-white">{totalSurat}</span>
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Surat</span>
                             </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-72 text-center">
-                                <div className="bg-gray-100 rounded-full p-8 mb-4">
-                                    <Mail className="w-16 h-16 text-black" />
+                        </div>
+
+                        <div className="flex w-full justify-center gap-6 mt-4 z-10">
+                            {pieData.map((entry, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                                    <span className="text-xs text-zinc-400 font-medium">{entry.name}</span>
                                 </div>
-                                <h3 className="text-lg font-semibold text-black mb-2">Belum ada surat masuk</h3>
-                                <p className="text-gray-400 max-w-sm">
-                                    Grafik akan muncul setelah ada surat masuk yang terdaftar dalam sistem
-                                </p>
-                            </div>
-                        )}
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Bar Chart - Monthly Data */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
-                        <div className="flex items-center justify-between mb-6">
+                    {/* Bar Chart Card */}
+                    <div className="lg:col-span-2 bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-8 relative">
+                        <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h2 className="text-lg font-semibold text-black">Statistik Per Bulan</h2>
-                                <p className="text-sm text-gray-400 mt-1">Distribusi surat masuk tahun {new Date().getFullYear()}</p>
+                                <h3 className="text-lg font-semibold text-white">Analitik Bulanan</h3>
+                                <p className="text-xs text-zinc-500">Tren surat masuk sepanjang tahun</p>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <Calendar className="w-5 h-5 text-teal-400" />
-                            </div>
-                        </div>
-
-                        {totalSurat > 0 ? (
-                            <div className="h-72">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={monthlyData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                        <XAxis
-                                            dataKey="month"
-                                            tick={{ fontSize: 12, fill: '#374151', fontWeight: 500 }}
-                                            axisLine={{ stroke: '#e5e7eb' }}
-                                        />
-                                        <YAxis
-                                            tick={{ fontSize: 12, fill: '#374151', fontWeight: 500 }}
-                                            axisLine={{ stroke: '#e5e7eb' }}
-                                        />
-                                        <Tooltip
-                                            contentStyle={{
-                                                backgroundColor: 'white',
-                                                border: '1px solid #e5e7eb',
-                                                borderRadius: '12px',
-                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                                                fontSize: '14px',
-                                                color: 'black'
-                                            }}
-                                            formatter={(value, name) => {
-                                                if (name === 'total') return [value, 'Total Surat'];
-                                                if (name === 'belumDibaca') return [value, 'Belum Dibaca'];
-                                                if (name === 'sudahDibaca') return [value, 'Sudah Dibaca'];
-                                                return [value, name];
-                                            }}
-                                            labelFormatter={(label) => `Bulan: ${label}`}
-                                        />
-                                        <Legend
-                                            wrapperStyle={{
-                                                paddingTop: '20px',
-                                                fontSize: '14px',
-                                                fontWeight: '400',
-                                                color: 'black'
-                                            }}
-                                        />
-                                        <Bar
-                                            dataKey="total"
-                                            fill="#00d5be"
-                                            name="total"
-                                            radius={[4, 4, 0, 0]}
-                                        />
-                                        <Bar
-                                            dataKey="belumDibaca"
-                                            fill="#000000"
-                                            name="belumDibaca"
-                                            radius={[4, 4, 0, 0]}
-                                        />
-                                        <Bar
-                                            dataKey="sudahDibaca"
-                                            fill="#00d5be"
-                                            name="sudahDibaca"
-                                            radius={[4, 4, 0, 0]}
-                                        />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-72 text-center">
-                                <div className="bg-gray-100 rounded-full p-8 mb-4">
-                                    <Calendar className="w-16 h-16 text-black" />
+                            <div className="flex gap-2">
+                                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs text-zinc-400">
+                                    <div className="w-2 h-2 rounded-full bg-white"></div> Total
                                 </div>
-                                <h3 className="text-lg font-semibold text-black mb-2">Belum ada data bulanan</h3>
-                                <p className="text-gray-400 max-w-sm">
-                                    Grafik bulanan akan muncul setelah ada surat masuk yang terdaftar dalam sistem
-                                </p>
+                                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs text-zinc-400">
+                                    <div className="w-2 h-2 rounded-full bg-zinc-700"></div> Pending
+                                </div>
                             </div>
-                        )}
-                    </div>
-                    <div className="w-full">
-                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                            <h3 className="text-lg font-semibold text-black mb-4">Ringkasan Bulanan</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
-                                {monthlyData.slice(-8).map((month, index) => (
-                                    <div key={index} className="text-center p-2 flex items-center justify-between bg-gray-50 rounded-xl border border-gray-200">
-                                        <div>
-                                            <h4 className="font-semibold text-black text-lg">{month.month}</h4>
-                                            <p className="text-lg font-semibold text-teal-400 mt-1">{month.total}</p>
-                                        </div>
+                        </div>
 
-                                        <div className="text-xs text-gray-400 space-y-2">
-                                            <div className="flex justify-between items-center">
-                                                <span>Belum:</span>
-                                                <span className="text-teal-400 font-semibold bg-teal-50 px-2 py-1 rounded-full">{month.belumDibaca}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span>Dibaca:</span>
-                                                <span className="text-teal-400 font-semibold bg-teal-100 px-2 py-1 rounded-full">{month.sudahDibaca}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                        <div className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={monthlyData} barGap={8}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                    <XAxis 
+                                        dataKey="month" 
+                                        tick={{ fontSize: 12, fill: '#71717a' }} 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        dy={10}
+                                    />
+                                    <YAxis 
+                                        tick={{ fontSize: 12, fill: '#71717a' }} 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: '#ffffff', opacity: 0.05 }}
+                                        contentStyle={{ backgroundColor: '#18181b', borderColor: '#333', color: '#fff', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+                                    />
+                                    <Bar dataKey="total" fill="#ffffff" radius={[4, 4, 0, 0]} maxBarSize={30} activeBar={{ fill: '#e4e4e7' }} />
+                                    <Bar dataKey="belumDibaca" fill="#3f3f46" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
                 </div>
 
-                <div className='flex md:flex-row flex-col w-full gap-2'>
-                    <div className="">
-                        {/* Quick Actions */}
-                        <div className="bg-white border border-teal-200 rounded-xl shadow-lg p-5">
-                            <div className="space-y-4">
-                                <Link to="/admin-surat-masuk">
-                                    <div className='text-black flex flex-col space-y-4 items-center justify-center'>
-                                        <p className='text-center'>Tambah Surat Masuk</p>
-                                        <div className='border border-teal-400 flex justify-center items-center p-4 rounded-full'>
-                                            <Plus className='w-7 h-7' />
-                                        </div>
-                                    </div>
-                                </Link>
+                {/* 3. Action & List Area */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    {/* Action Card - Make it look like a button but styled as a card */}
+                    <Link to="/admin-surat-masuk" className="lg:col-span-1 group">
+                        <div className="h-full bg-zinc-900 border border-zinc-800 rounded-3xl p-8 flex flex-col items-center justify-center text-center hover:bg-white hover:border-white transition-all duration-300 shadow-lg cursor-pointer group">
+                            <div className="w-16 h-16 rounded-2xl bg-white text-black flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 group-hover:bg-black group-hover:text-white transition-all duration-300">
+                                <Plus className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-semibold text-white group-hover:text-black transition-colors">Input Surat Baru</h3>
+                            <p className="text-zinc-500 text-sm mt-2 group-hover:text-zinc-600 transition-colors">
+                                Tambahkan data surat masuk ke dalam sistem arsip
+                            </p>
+                            <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 group-hover:text-zinc-400">
+                                <span>Action</span>
+                                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                             </div>
                         </div>
+                    </Link>
+
+                    {/* Table / List Container */}
+                    <div className="lg:col-span-3 bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl overflow-hidden p-1">
+                        <div className="bg-zinc-950/50 rounded-[20px] overflow-hidden h-full">
+                            <SuratMasukTerbaru />
+                        </div>
                     </div>
-
-                    {/* Surat List Section */}
-                    <SuratMasukTerbaru />
                 </div>
-
             </div>
-
         </div>
     )
 }

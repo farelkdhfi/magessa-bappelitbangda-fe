@@ -1,6 +1,7 @@
 import React from 'react'
 import Modal from './Modal';
 
+
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Konfirmasi', cancelText = 'Batal', type = 'warning' }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} type={type}>

@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight, Image, Loader2, MapPin, Search, Users, X } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, MapPin, Search, Users, X, Clock, Mail, Briefcase, User, Building2 } from 'lucide-react';
 import React from 'react'
 import LoadingSpinner from '../Ui/LoadingSpinner';
 
@@ -16,180 +16,189 @@ const GuestView = ({
     setView,
     formatDate,
     formatTime
-
 }) => {
+    
+    if (view !== 'guests' || !currentEvent) return null;
+
     return (
-        <div>
-            {view === 'guests' && currentEvent && (
-                <div className="space-y-4">
-                    {/* Back Button */}
-                    <div className="flex items-center gap-2 mt-7">
-                        <button
-                            onClick={() => setView('events')}
-                            className="flex items-center text-black hover:text-gray-700 font-medium transition-colors"
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                            Kembali ke Daftar Acara
+        <div className="w-full animate-in fade-in slide-in-from-right-8 duration-500">
+            
+            {/* 1. HEADER & NAVIGATION */}
+            <div className="flex flex-col gap-6 mb-8">
+                <button
+                    onClick={() => setView('events')}
+                    className="self-start flex items-center gap-2 px-4 py-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-all group"
+                >
+                    <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    <span className="text-sm font-medium">Kembali ke Daftar Acara</span>
+                </button>
+
+                {/* Event Info Panel */}
+                <div className="bg-zinc-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
+                    
+                    <div className="relative z-10">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                            <div>
+                                <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-3">
+                                    Event Detail
+                                </span>
+                                <h2 className="text-3xl font-light text-white mb-2">{currentEvent.nama_acara}</h2>
+                                {currentEvent.deskripsi && (
+                                    <p className="text-zinc-400 text-sm max-w-2xl line-clamp-2 mb-4">{currentEvent.deskripsi}</p>
+                                )}
+                            </div>
+                            
+                            {/* Meta Badges */}
+                            <div className="flex flex-wrap gap-2">
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/40 border border-white/5 text-zinc-300 text-xs font-medium">
+                                    <Calendar className="w-4 h-4 text-zinc-500" />
+                                    {formatDate(currentEvent.tanggal_acara)}
+                                </div>
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/40 border border-white/5 text-zinc-300 text-xs font-medium">
+                                    <MapPin className="w-4 h-4 text-zinc-500" />
+                                    {currentEvent.lokasi || 'Lokasi tidak diset'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. SEARCH & FILTER */}
+            <div className="bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-2xl p-4 mb-8 shadow-2xl shadow-black/20 sticky top-4 z-20">
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input 
+                        type="text"
+                        placeholder="Cari nama tamu, instansi, atau jabatan..."
+                        value={guestSearch}
+                        onChange={(e) => setGuestSearch(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 transition-all"
+                    />
+                    {guestSearch && (
+                        <button onClick={() => setGuestSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full text-zinc-500 hover:text-white transition">
+                            <X className="w-3 h-3" />
                         </button>
-                    </div>
+                    )}
+                </div>
+                <div className="mt-3 px-1 flex justify-between items-center text-[10px] uppercase tracking-widest text-zinc-500 font-medium">
+                    <span>{guestsPagination.total_items} Tamu Terdaftar</span>
+                </div>
+            </div>
 
-                    {/* Event Info Card */}
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-4">
-                        <p className=' text-sm text-gray-400'>Nama Acara</p>
-                        <h2 className='text-lg font-bold mt-1 mb-5'>{currentEvent.nama_acara}</h2>
-                        <div className="flex flex-wrap gap-4 text-sm text-black">
-                            <div className="flex items-center">
-                                <Calendar className="w-5 h-5 text-teal-400 mr-2" />
-                                {formatDate(currentEvent.tanggal_acara)}
-                            </div>
-                            <div className="flex items-center">
-                                <MapPin className="w-5 h-5 text-teal-400 mr-2" />
-                                {currentEvent.lokasi}
-                            </div>
+            {/* 3. CONTENT AREA */}
+            <div className="min-h-[300px]">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        <span className="text-xs text-zinc-500 uppercase tracking-widest animate-pulse">Memuat Data Tamu...</span>
+                    </div>
+                ) : guests.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-3xl bg-zinc-900/20">
+                        <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-white/5">
+                            <Users className="w-6 h-6 text-zinc-600" />
                         </div>
-                    </div>
-
-                    {/* Guest Search */}
-                    <div className="bg-white rounded-2xl border-2 border-[#EDE6E3] shadow-sm p-6">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-black" />
-                            <input
-                                type="text"
-                                placeholder="Cari nama tamu atau instansi..."
-                                value={guestSearch}
-                                onChange={(e) => setGuestSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-white border border-[#EDE6E3] rounded-xl focus:ring-2 focus:ring-white focus:border-white text-black placeholder-black shadow-sm"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl border-2 border-[#EDE6E3] shadow-sm overflow-hidden">
-                        {loading ? (
-                            <div className="p-12 text-center">
-                                <LoadingSpinner size="lg" text="Memuat data tamu..." />
-                            </div>
-                        ) : guests.length === 0 ? (
-                            <div className="text-center py-12 bg-white rounded-2xl border-2 border-[#EDE6E3] shadow-sm">
-                                <Users className="h-12 w-12 text-black mx-auto mb-4" />
-                                <p className="text-black text-lg font-semibold">
-                                    {guestsPagination.total_items === 0 ? 'Belum ada tamu' : 'Tidak ada tamu yang sesuai filter'}
-                                </p>
-                                <p className="text-black mt-1">
-                                    {guestsPagination.total_items === 0 ? 'Belum ada tamu yang melakukan check-in untuk acara ini.' : 'Coba ubah filter pencarian'}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-[#EDE6E3] bg-white rounded-2xl">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Tamu</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Instansi</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Jabatan / Status / Pekerjaan</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Check In</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Foto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-[#EDE6E3]">
-                                        {guests.map((guest) => (
-                                            <tr key={guest.id} className="hover:bg-[#FDFCFB] transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                                                    {guest.nama_lengkap}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                    {guest.instansi || '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                    <div className="space-y-1">
-                                                        <div>{guest.email || '-'}</div>
-                                                        <div className="text-gray-600">{guest.jabatan || '-'}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                    <div className="space-y-1">
-                                                        <div className="font-medium">{formatDate(guest.check_in_time)}</div>
-                                                        <div className="text-gray-600">{formatTime(guest.check_in_time)}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {guest.foto_kehadiran_tamu && guest.foto_kehadiran_tamu.length > 0 ? (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {guest.foto_kehadiran_tamu.map((foto) => (
-                                                                <div key={foto.id} className="relative group">
-                                                                    <img
-                                                                        src={foto.file_url}
-                                                                        alt={foto.original_name}
-                                                                        className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity shadow-sm border border-[#EDE6E3]"
-                                                                        onClick={() => {
-                                                                            setSelectedImage(foto.file_url);
-                                                                        }}
-                                                                    />
-                                                                    <button
-                                                                        onClick={() => setConfirmModal({
-                                                                            isOpen: true,
-                                                                            data: {
-                                                                                type: 'delete-photo',
-                                                                                id: foto.id
-                                                                            }
-                                                                        })}
-                                                                        disabled={actionLoading[`photo-${foto.id}`]}
-                                                                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg disabled:opacity-50"
-                                                                    >
-                                                                        {actionLoading[`photo-${foto.id}`] ? (
-                                                                            <Loader2 className="w-2 h-2 animate-spin" />
-                                                                        ) : (
-                                                                            <X className="w-2 h-2" />
-                                                                        )}
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-gray-500 text-sm italic">Tidak ada foto</span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                        <h3 className="text-white font-medium mb-1">Belum Ada Tamu</h3>
+                        <p className="text-zinc-500 text-sm">Belum ada tamu check-in atau data tidak ditemukan.</p>
+                        {guestSearch && (
+                            <button onClick={() => setGuestSearch('')} className="mt-4 text-xs text-white underline underline-offset-4">Reset Pencarian</button>
                         )}
-
-                        {/* Pagination — Disesuaikan gaya SuratMasukList */}
-                        {guests.length > 0 && (
-                            <div className="px-6 py-4 bg-white border-t border-[#EDE6E3] flex items-center justify-between">
-                                <div className="text-sm font-medium text-black">
-                                    Menampilkan {((guestsPagination.current_page - 1) * 10) + 1} - {Math.min(guestsPagination.current_page * 10, guestsPagination.total_items)} dari {guestsPagination.total_items} tamu
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => loadGuests(currentEvent.id, guestsPagination.current_page - 1, guestSearch)}
-                                        disabled={guestsPagination.current_page === 1}
-                                        className="p-2 border border-[#EDE6E3] rounded-xl hover:bg-[#FDFCFB] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                                    >
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </button>
-
-                                    <div className="flex items-center gap-1">
-                                        <span className="px-3 py-2 bg-white text-black rounded-xl font-semibold border border-[#EDE6E3]">
-                                            {guestsPagination.current_page}
-                                        </span>
-                                        <span className="text-sm text-black">dari</span>
-                                        <span className="px-3 py-2 bg-white text-black rounded-xl font-semibold border border-[#EDE6E3]">
-                                            {guestsPagination.total_pages}
-                                        </span>
+                    </div>
+                ) : (
+                    /* 4. GUEST CARDS GRID */
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {guests.map((guest) => (
+                            <div key={guest.id} className="group bg-zinc-900/30 backdrop-blur-sm border border-white/5 rounded-3xl p-5 hover:border-white/20 transition-all duration-300 relative">
+                                
+                                {/* Header: Profile Info */}
+                                <div className="flex items-start gap-4 mb-4">
+                                    <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center border border-white/5 shrink-0">
+                                        <User className="w-5 h-5 text-zinc-400" />
                                     </div>
+                                    <div className="min-w-0">
+                                        <h3 className="text-white font-semibold truncate pr-2">{guest.nama_lengkap}</h3>
+                                        <div className="flex items-center gap-1.5 mt-1 text-xs text-zinc-400">
+                                            <Mail className="w-3 h-3" />
+                                            <span className="truncate">{guest.email || '-'}</span>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                    <button
-                                        onClick={() => loadGuests(currentEvent.id, guestsPagination.current_page + 1, guestSearch)}
-                                        disabled={guestsPagination.current_page === guestsPagination.total_pages}
-                                        className="p-2 border border-[#EDE6E3] rounded-xl hover:bg-[#FDFCFB] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                                    >
-                                        <ChevronRight className="h-4 w-4" />
-                                    </button>
+                                {/* Details Grid */}
+                                <div className="space-y-3 mb-5">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 text-xs text-zinc-300">
+                                        <Building2 className="w-3.5 h-3.5 text-zinc-500" />
+                                        <span className="truncate">{guest.instansi || '-'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 text-xs text-zinc-300">
+                                        <Briefcase className="w-3.5 h-3.5 text-zinc-500" />
+                                        <span className="truncate">{guest.jabatan || '-'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-xs text-emerald-400">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span>Check-in: {formatTime(guest.check_in_time)}</span>
+                                        <span className="text-zinc-600 text-[10px] ml-auto">{formatDate(guest.check_in_time)}</span>
+                                    </div>
+                                </div>
+
+                                {/* Photos & Actions */}
+                                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                                    {guest.foto_kehadiran_tamu && guest.foto_kehadiran_tamu.length > 0 ? (
+                                        <div className="flex -space-x-2">
+                                            {guest.foto_kehadiran_tamu.map((foto, idx) => (
+                                                <div key={foto.id} className="relative group/photo">
+                                                    <img
+                                                        src={foto.file_url}
+                                                        alt="Check-in"
+                                                        className="w-8 h-8 rounded-full border-2 border-zinc-900 object-cover cursor-pointer hover:scale-110 transition-transform"
+                                                        onClick={() => setSelectedImage(foto.file_url)}
+                                                    />
+                                                    {/* Delete Photo Button (Hover Only) */}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setConfirmModal({ isOpen: true, data: { type: 'delete-photo', id: foto.id } });
+                                                        }}
+                                                        disabled={actionLoading[`photo-${foto.id}`]}
+                                                        className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                                                    >
+                                                        {actionLoading[`photo-${foto.id}`] ? <Loader2 className="w-2 h-2 animate-spin" /> : <X className="w-2 h-2" />}
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <span className="text-[10px] text-zinc-600 italic">No photos</span>
+                                    )}
                                 </div>
                             </div>
-                        )}
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* 5. PAGINATION */}
+            {!loading && guests.length > 0 && guestsPagination.total_pages > 1 && (
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-white/5">
+                    <p className="text-xs text-zinc-500">
+                        Halaman <span className="text-white font-mono">{guestsPagination.current_page}</span> dari {guestsPagination.total_pages}
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => loadGuests(currentEvent.id, guestsPagination.current_page - 1, guestSearch)}
+                            disabled={guestsPagination.current_page === 1}
+                            className="p-2 rounded-lg bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => loadGuests(currentEvent.id, guestsPagination.current_page + 1, guestSearch)}
+                            disabled={guestsPagination.current_page === guestsPagination.total_pages}
+                            className="p-2 rounded-lg bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
                 </div>
             )}
